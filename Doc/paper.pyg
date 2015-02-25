@@ -1,0 +1,19 @@
+    [tpr (t1 t2)
+           (let ([v1 (big-step t1)]
+                 [v2 (big-step t2)])
+              (tpr v1 v2))]
+
+    [tfirst (t0)
+            (let ([v (big-step t0)])
+              (cond
+                [(tpr? v) (big-step (tpr-t1 v))]
+                [else (error "Cannot get first item if not a pair!")]
+              ))]
+
+    [tsecond (t0)
+            (let ([v (big-step t0)])
+              (cond
+                [(tpr? v) (big-step (tpr-t2 v))]
+                [else (error "Cannot get second item if not a pair!")]
+              ))]
+
