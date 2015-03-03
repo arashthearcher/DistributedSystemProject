@@ -1,0 +1,28 @@
+\section{Evaluation Methodology}
+
+
+
+\section{Related Work}
+
+Yabandeh et al.\cite{yabandeh2011finding} proposed an approach to
+infer almost-invariants in distributed systems. They infer the
+invariants that are true in most cases and assume these invariants
+only get violated due to manifestation of bugs. There are a number of
+ways our approach differ from theirs: Their approach requires user to
+provide a list of variables and functions that they want to consider
+for inferring invariants while our approach infers distributed state
+variables automatically. Moreover, they assume that an external module
+generates a trace of globally consistent state system for their
+algorithm while our approach extract these states through dynamic
+execution of the distributed system.
+
+Ernst et al.\cite{ernst2001dynamically} infer invariants in a
+sequential program by executing the program on a collection of inputs.
+This invariant detector has been released as a tool called
+Daikon\cite{ernst2007daikon}. Although, we use their tool to infer
+invariants, detecting invariants in a distributed system poses unique
+challenges to identify distributed state and valid global states among
+a larger set of variables. Ne Win et al.\cite{NeWinEGKL04} use daikon
+to assist theorem provers for verifying distributed algorithms. To
+demonstrate their approach, they proved the correctness of the Paxos
+algorithm.
