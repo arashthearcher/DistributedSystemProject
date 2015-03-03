@@ -515,10 +515,10 @@ Daikon to infer invariants among our distributed state variables.
 \section{Approach}
 
 The ultimate goal of this project is to infer invariants in a
-distributed system. For that we need to identify likely distributed
-state variables. We define distributed state variables,  as variables
-that are stored in one node whose values are affected/determined by
-another remote node in the distributed system. It should be noted that
+distributed system. For the scope of this project we will consider a system with 2 nodes. Before inferring invariants we need to identify likely distributed
+state variables. We define distributed state variables, as variables
+that are stored in one node whose values are affected or determined by
+the other remote node in the distributed system. It should be noted that
 these variables are only a part of the state in a distributed system
 at a given time. For our case we assume that these capture a
 significant portion of the state. Consider the code samples
@@ -557,13 +557,35 @@ between elements in each pair \texttt{(a,first),
 \end{lstlisting}
 \end{figure}
 
+The naive approach for inferring these invariants will be to dump all
+state varaible values at all program points and feed them to an
+invariant detector like daikon\cite{ernst2007daikon}. But given the
+number of program points and huge number of variables in a relatively
+large program this approach is not scalable. So we propose 2 main
+optimizations to reduce the number of program point, variable value
+combinations.
+
+\subsection{Detecting interesting program points}
+
+Rather than dumping state at all program points we expect the
+developer to mark interesting program points using annotations. The
+program state will be dumped at only these annotated points. This will
+also help to narrow down the focus to points that are identified by
+the developer as interesting points without wasting resources
+analyzing useless program points. The annotations will be identified
+by the parser at the instrumentation phase and re-written to include
+statements which will write the values of variable to a file when the
+program reaches that point in the runtime.
 
 \subsection{Dataflow analysis for Go programs}
 
-To detect these variables, some form of dataflow analysis is required.
-This includes the dataflow of the distributed system as a whole and
-also in a single program. But currently there are no data flow
-analysis frameworks available for Go programs.
+Even at interesting program points, variable space that need to be
+captured is very large. So only the variables that were affected by
+the communication with other nodes need to be identified. To detect
+these variables, some form of dataflow analysis is required. This
+includes the dataflow of the distributed system as a whole and also in
+a single program. But currently there are no data flow analysis
+frameworks available for Go programs.
 
 This is a challenging problem in itself because Go language has
 special constructs like channels to share data between goroutines. We
@@ -604,6 +626,8 @@ flow of the analysis is shown in Figure~\ref{fig:go_flow}.
   \caption{Flow of the invariant inference of Go programs}
   \label{fig:go_flow}
 \end{figure}
+
+\subsection{Timeline}
 
 \section{Related Work}
 
