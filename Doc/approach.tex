@@ -79,6 +79,15 @@ includes the dataflow of the distributed system as a whole and also in
 a single program. For example using a forward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable at line 1. But currently there are no data flow analysis
 frameworks specifically for Go programs.
 
+So we are planning to do a dynamic dataflow analysis which consists of follwing steps:
+\begin{itemize}
+\item Instrumenting variable declarations and assignments at the run time
+\item Collecting execution traces of each of these statements by runnning test suites
+\item Doing a forward flow analysis using the collected traces
+\end{itemize}
+
+This dynamic analysis approach was chosen because it gives information about the actual execution and therefore is more accurate. And also compared to using a static analysis-based approach, this approach makes it easier to handle Go language-specific constructs like channels which are used share data between goroutines. Only drawback in this approach is, it only examines the paths invoked during execution, unlike static analysis which can be used to reason about all possible execution paths and variable values. To compensate for that we are planning to use a comprehnsive test suite with good test coverage.
+
 % This is a challenging problem in itself because Go language has
 % special constructs like channels to share data between goroutines. We
 % are planning to do this analysis dynamically by instrumenting variable
