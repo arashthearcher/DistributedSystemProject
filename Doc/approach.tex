@@ -1,18 +1,19 @@
 \section{Approach}
 
 The ultimate goal of this project is to infer invariants in a
-distributed system. For the scope of this project we will consider a system with 2 nodes. Before inferring invariants we need to identify likely distributed
-state variables. We define distributed state variables, as variables
-that are stored in one node whose values are affected or determined by
-the other remote node in the distributed system. It should be noted that
-these variables are only a part of the state in a distributed system
-at a given time. For our case we assume that these capture a
-significant portion of the state. Consider the code samples
-Listing~\ref{lst:node0} and Listing~\ref{lst:node1} showing the
-communication between two nodes in a distributed system. The
-communication between the nodes can be depicted as shown in
-Figure~\ref{fig:sample_code_diag}. We need to infer the equality
-between elements in each pair \texttt{(a,first),
+distributed system. For the scope of this project we will consider a
+system with 2 nodes. Before inferring invariants we need to identify
+likely distributed state variables. We define distributed state
+variables, as variables that are stored in one node whose values are
+affected or determined by the other remote node in the distributed
+system. It should be noted that these variables are only a part of the
+state in a distributed system at a given time. For our case we assume
+that these capture a significant portion of the state. Consider the
+code samples Listing~\ref{lst:node0} and Listing~\ref{lst:node1}
+showing the communication between two nodes in a distributed system.
+This conversation is depicted visually in
+Figure~\ref{fig:sample_code_diag}. Here it will be useful to to infer
+the equality between elements in each pair \texttt{(a,first),
 (b,second),(sum,result)} and also the properites: \texttt{(result = a
 + b)} and \texttt{(sum = first + second)}.
 
@@ -47,7 +48,7 @@ The naive approach for inferring these invariants will be to dump all
 state varaible values at all program points and feed them to an
 invariant detector like daikon\cite{ernst2007daikon}. But given the
 number of program points and huge number of variables in a relatively
-large program this approach is not scalable. So we propose 2 main
+large program this approach is not scalable. So we propose two main
 optimizations to reduce the number of program point, variable value
 combinations.
 
@@ -62,6 +63,11 @@ analyzing useless program points. The annotations will be identified
 by the parser at the instrumentation phase and re-written to include
 statements which will write the values of variable to a file when the
 program reaches that point in the runtime.
+
+Since there can be multiple points annotated in a program by a
+developer, vector clocks will be used to partially order annotation
+pairs in the two programs. This will also help to invalidate
+annotations put at irrelevant locations by the developer.
 
 \subsection{Dataflow analysis for Go programs}
 
