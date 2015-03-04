@@ -1,5 +1,5 @@
 \section{Evaluation Methodology}
-We will implement our approach in Go
+We will implement our approach in a tool in Go programming language. We plan to evaluate our tool by verifying correctness of two phase commit and leader election protocols. Our tool should be able to infer safety property of both algorithms. In two phase commit protocol all nodes should perform the same action (commit or abort) so our tool should infer this property. In leader election algorithm there should be only one leader (uniqueness property) and at the end of protocol execution all nodes should know ID of the leader (agreement property). It is worth mentioning that our approach is not suitable for checking the liveness properties of these algorithms.
 
 \section{Related Work}
 
