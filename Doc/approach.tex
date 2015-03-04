@@ -79,7 +79,7 @@ includes the dataflow of the distributed system as a whole and also in
 a single program. For example using a forward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable at line 1. But currently there are no data flow analysis
 frameworks specifically for Go programs.
 
-So we are planning to do a dynamic dataflow analysis which consists of follwing steps:
+So we are planning to do a dynamic dataflow analysis which consists of following steps:
 \begin{itemize}
 \item Instrumenting variable declarations and assignments at the run time
 \item Collecting execution traces of each of these statements by runnning test suites
@@ -121,9 +121,32 @@ This dynamic analysis approach was chosen because it gives information about the
 % true over the observed executions across 2 nodes. Overall execution
 % flow of the analysis is shown in Figure~\ref{fig:go_flow}.
 
+Overall execution flow of the analysis is illustrated in Figure~\ref{fig:go_flow} and works as follows:
+\begin{itemize}
+\item Developer annotates interesting program points in the Go program which will be used as states for mining invariants.
+\item Program is instrumented to 
+\begin{itemize}
+\item dump variable values at the annotated program points at run time
+\item wrap all RPC communication to include vector clocks
+\item log all declarations and assignments for doing the forward flow analysis
+\end{itemize}
+ For this we are hoping to use static analysis libraries
+available under Go-lang Parse package and tools\cite{static_golang} which provide
+support for Identifier resolution, Type information, Call graph
+navigation and Channel peers (send $\leftrightarrow$ receive)
+identification.
+\item Then as the first step in the analysis phase, this instrumented program is executed using the test suites and program traces are collected.
+\item Forward flow analysis is done on the collected traces
+\item Using the results of the previous step, variables contributing to distributed state is identified.
+\item From the dumped variable values at annotated program points (after multiple executions), only the values of variables chosen in the previous step are selected.
+\item Selected variable values belonging to 2 distinct annotated program points in the 2 nodes are fed to Daikon for inferring invariants.
+\end{itemize}
+
 
 \begin{figure}
   \includegraphics[width=\columnwidth]{go_flow.pdf}
   \caption{Flow of the invariant inference of Go programs}
   \label{fig:go_flow}
 \end{figure}
+
+\section{Timeline}
