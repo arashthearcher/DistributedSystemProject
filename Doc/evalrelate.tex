@@ -26,7 +26,7 @@ to assist theorem provers for verifying distributed algorithms. To
 demonstrate their approach, they proved the correctness of the Paxos
 algorithm.
 
-Beschastnikh et al \cite{temporalInv} infer temporal invariants from partially ordered logs of the distributed system. By using logs of the system, they put the responsibility on developers to decide which portion of state of the program can be used to infer invariants. We require developers at which point in program invariants can be checked but we infer the portion of state that can be checked for invariants automatically with data flow analysis.
+Beschastnikh et al. \cite{temporalInv} infer temporal invariants from partially ordered logs of the distributed system. By using logs of the system, they put the responsibility on developers to decide which portion of state of the program can be used to infer invariants. We require developers to specify at which points in program invariants can be checked but we infer the portion of the state that can be checked for invariants automatically with data flow analysis.
 
 
 \section{Acknowledgment}
