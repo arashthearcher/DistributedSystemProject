@@ -67,7 +67,7 @@ program reaches that point in the runtime.
 Since there can be multiple points annotated in a program by a
 developer, vector clocks will be used to partially order annotation
 pairs in the two programs. This will also help to invalidate
-annotations put at irrelevant locations by the developer.
+annotations inserted at irrelevant locations by the developer.
 
 \subsection{Dataflow analysis for Go programs}
 
@@ -76,41 +76,41 @@ captured is very large. So only the variables that were affected by
 the communication with other nodes need to be identified. To detect
 these variables, some form of dataflow analysis is required. This
 includes the dataflow of the distributed system as a whole and also in
-a single program. But currently there are no data flow analysis
-frameworks available for Go programs.
+a single program. For example using a forward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable at line 1. But currently there are no data flow analysis
+frameworks specifically for Go programs.
 
-This is a challenging problem in itself because Go language has
-special constructs like channels to share data between goroutines. We
-are planning to do this analysis dynamically by instrumenting variable
-declarations and assignments, and then collecting execution traces of
-each of these statements. We have chosen this approach because it
-gives information about the actual execution and therefore is more
-accurate. For this we are hoping to use static analysis libraries
-available under Go-lang tools\cite{static_golang} which provide
-support for Identifier resolution, Type information, Call graph
-navigation and Channel peers (send $\leftrightarrow$ receive)
-identification.
+% This is a challenging problem in itself because Go language has
+% special constructs like channels to share data between goroutines. We
+% are planning to do this analysis dynamically by instrumenting variable
+% declarations and assignments, and then collecting execution traces of
+% each of these statements. We have chosen this approach because it
+% gives information about the actual execution and therefore is more
+% accurate. For this we are hoping to use static analysis libraries
+% available under Go-lang tools\cite{static_golang} which provide
+% support for Identifier resolution, Type information, Call graph
+% navigation and Channel peers (send $\leftrightarrow$ receive)
+% identification.
 
-Our dynamic dataflow analysis is focused on mainly providing the
-following features. Given a variable, start line and end line it will
-return a set of variables affected by that variable between start line
-and the end line.
+% Our dynamic dataflow analysis is focused on mainly providing the
+% following features. Given a variable, start line and end line it will
+% return a set of variables affected by that variable between start line
+% and the end line.
 
-As the next phase of our project, using the above analysis, we hope to
-find out variables affected by receiving messages in interprocess
-communication channels like RPC and TCP/UDP sockets. We will get the
-values of these variables just before another send/receive or end of
-function whichever occurs first. We assume these set of variables at
-the send statement in both (sending and receiving) nodes taken
-together represent global state of the distributed system.
+% As the next phase of our project, using the above analysis, we hope to
+% find out variables affected by receiving messages in interprocess
+% communication channels like RPC and TCP/UDP sockets. We will get the
+% values of these variables just before another send/receive or end of
+% function whichever occurs first. We assume these set of variables at
+% the send statement in both (sending and receiving) nodes taken
+% together represent global state of the distributed system.
 
-Given two nodes which are communicating we have two such sets of
-variables representing a particular state. So we will select the
-corresponding variable pairs from send and receive of each node
-mentioned in the previous step and provide as inputs for the Daikon
-invariant detector. This will give us a set of properties that were
-true over the observed executions across 2 nodes. Overall execution
-flow of the analysis is shown in Figure~\ref{fig:go_flow}.
+% Given two nodes which are communicating we have two such sets of
+% variables representing a particular state. So we will select the
+% corresponding variable pairs from send and receive of each node
+% mentioned in the previous step and provide as inputs for the Daikon
+% invariant detector. This will give us a set of properties that were
+% true over the observed executions across 2 nodes. Overall execution
+% flow of the analysis is shown in Figure~\ref{fig:go_flow}.
 
 
 \begin{figure}
