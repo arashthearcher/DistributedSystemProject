@@ -14,10 +14,11 @@ state of all nodes as distributed state of the system.
 %The most challenging part of this work is to find valid snapshots of distributed states for the system. 
 
 \section{Motivating Example}
-For motivation example, consider sudo-2-phase-commit protocol of figure \ref{lst:2pc}. In this protocol coordinator first queries other nodes for their vote and if all nodes including the coordinator vote ``True" then coordinator sends ``Commit", otherwise it sends ``Abort" to all other nodes. The correctness invariant of this protocol is that at the end of protocol value of commit variable of all nodes should be the same.
+For motivation example, consider sudo-2-phase-commit protocol of figure \ref{lst:2pc}. In this protocol coordinator first queries other nodes for their vote and if all nodes including the coordinator vote ``Commit" then coordinator sends ``Commit", otherwise it sends ``Abort" to all other nodes. At the end of this protocol all nodes should either commit or abort . In order to verify that this algorithm is working correctly, developer can examine inferred invariants of the protocol run and inspect if these inferred invariants match expected behaviour of the system (In this case commit value of all nodes should have the same value). We use daikon \cite{ernst2001dynamically} to infer invariants between variables so we can infer linear ($y = ax + b$), ordering ($y < x$) and containment ($x \in y$) relationships that may hold between variables.
 
 
 \begin{figure}
+\centering
 \begin{lstlisting}[caption={Coordinator Code}]
 for i := 1 to n do
 	send('Q',i)
