@@ -1,7 +1,7 @@
 \section{Introduction}
 
 Building a reliable distributed system is a difficult task, since distributed system should continue operating even when components or network fail, this means that there are many corner cases that developers should consider when building the system. Building such 
-a reliable and dependable system is not possible without thorough testing of the system. But unfortunately testing a distributed system is a much more difficult task because it is much harder to test components of a distributed system in isolation. There are many 
+a reliable and dependable system is not possible without thorough testing of the system. However, unfortunately testing a distributed system is a much more difficult task because it is much harder to test components of a distributed system in isolation. There are many 
 failure scenarios that distributed system should handle and these scenarios should be tested as well. In some cases reproducing the failures is a difficult task e.g. degrading network performance for test purposes. Many bugs turn out to be heisenbugs in distributed 
 system which are hard to reproduce and detect. For testing and debugging distributed systems, developers and testers have to spend a considerable amount of time inspecting logs of the system manually and looking for incidents that system does not behave as 
 expected. One alternative to this laborious approach is to define invariants for system's expected behaviour and check the software traces against these invariants. This approach is considerably easier than the former but as the system gets larger and more 
@@ -11,17 +11,45 @@ Testing distributed systems is hard because a fault in a single node does not co
 assume that state of each node is comprised of its variables. Not all variables of one node is affected by other nodes, we define the set of variables of one node whose values are affected by other nodes as distributed state of that node. We refer to set of distributed 
 state of all nodes as distributed state of the system.
 
-The most challenging part of this work is to find valid snapshots of distributed states for the system. 
+%The most challenging part of this work is to find valid snapshots of distributed states for the system. 
 
+\section{Motivating Example}
+For motivation example, consider sudo-2-phase-commit protocol of figure \ref{lst:2pc}. In this protocol coordinator first queries other nodes for their vote and if all nodes including the coordinator vote ``True" then coordinator sends ``Commit", otherwise it sends ``Abort" to all other nodes. The correctness invariant of this protocol is that at the end of protocol value of commit variable of all nodes should be the same.
+
+
+\begin{figure}
+\begin{lstlisting}[caption={Coordinator Code}]
+for i := 1 to n do
+	send('Q',i)
+commit := decide()
+for i:= 1 to n do
+	recv(buf,i)
+	if (buf == 'A')
+		commit := 'A'
+for i := 1 to n
+	send(commit, i)
+\end{lstlisting}
+\begin{lstlisting}[caption={Coordinator Code}]
+recv(buf)
+if(buf == 'Q')
+	vote:= decide()
+	send(vote)
+if (vote == 'A')
+	commit = 'A'
+else
+	recv(buf)
+	commit = buf
+\end{lstlisting}
+\caption{Sudo 2 phase commit code for coordinator and cohorts}
+\label{lst:2pc}
+\end{figure}
 
 \section{Background}
 
-Although previous works \cite{ernst2001dynamically} showed that invariant inference is feasible in sequential programs, inferring invariants in a distributed system poses unique challenges and still is a open problem. To infer invariants in a distributed system we should have global snapshots (log of variables) of the system. However, not every snapshot of the system is a valid one. Mattern introduced the notion of cut and consistent cut as snapshot and valid snapshots of a system. In \cite{mattern1989virtual} he also proposed an algorithm to find consistent cuts. The notion of distributed state first proposed by Ousterhout in \cite{ousterhout1991role} as ``information retained in one place that describes something, or is determined by something, somewhere else in the system". We use dynamic data flow analysis to detect distributed state of the system. In fact we perform data flow analysis across the nodes in the distributed system.
+Invariants are properties that should hold in  certain points in program. Although previous works \cite{ernst2001dynamically} showed that invariant inference is feasible in sequential programs, inferring invariants in a distributed system poses unique challenges and still is a open problem. To infer invariants in a distributed system we should have global snapshots (log of variables) of the system. However, not every snapshot of the system is a valid one. Mattern introduced the notion of cut and consistent cut as snapshot and valid snapshots of a system. In \cite{mattern1989virtual} he also proposed an algorithm to find consistent cuts. The notion of distributed state first proposed by Ousterhout in \cite{ousterhout1991role} as ``information retained in one place that describes something, or is determined by something, somewhere else in the system". We use dynamic data flow analysis to detect distributed state of the system. In fact we perform data flow analysis across the nodes in the distributed system.
 
 
 Our approach is to automatically infer invariants that may exist in distributed state of our system. To this end, we execute distributed programs by running the test cases and dynamically select a set of variables in each node that likely represent the distributed state 
-across our distributed nodes. We do so with dynamic data flow analysis of variables and selecting those that are affected by a send or receive operation. Finally we use Daikon to infer invariants among our distributed state variables. We can view our approach as 
-an optimization. The naive approach is to log all of the variables at each instruction execution and give all consistent cuts of the system to daikon to infer invariants between variables. However, this naive approach is not efficient at all, if a total number of n 
-instruction is executed during a run by all nodes in the system and on average we have m variables for each node, we should log $n*m$ variables but many of these variables are local to one node and are not affected by other nodes, so we may even end up 
-finding many false positives (invariants that hold by accident and are not meaningful). Our approach only logs variables that a invariant might exists between them by using data flow analysis and finding group of variables (across the nodes) which affect each other. 
-Another optimization that our approach does is that instead of logging the variables at each instruction, we only log them at consistent cuts annotated by developers. Based on our observations some must-hold invariants can be violated for small amount of time (e.g. execution time of several instructions) until systems goes to a stable state, so we decided to give developers responsibility to decide when invariants should hold and can be checked in the system by annotating the code. By this approach we improve usefulness of our tool for developers.
+across our distributed nodes. We do so with dynamic data flow analysis of variables and selecting those that are affected by a send or receive operation. Finally we use Daikon to infer invariants among our distributed state variables. \\ \\
+We can view our approach as an optimization. The naive approach is to log all of the variables at each instruction execution and give all consistent cuts of the system to daikon to infer invariants between the variables. However, this naive approach is not efficient at all, if a total number of n instruction is executed during a run by all nodes in the system and on average we have m variables for each node, we should log $n*m$ variables but many of these variables are local to one node and are not affected by other nodes, so we may even end up finding many false positives (invariants that hold by accident and are not meaningful). Our approach only logs variables that an invariant might exists between them by using data flow analysis and finding group of variables (across the nodes) which affect each other. 
+Another optimization that our approach does is that instead of logging the variables at each instruction, we only log them at consistent cuts annotated by developers. Based on our observations some must-hold invariants can be violated for small amount of time (e.g. execution time of several instructions) until systems goes to a stable state, so we decided to give developers responsibility to decide when invariants should hold and can be checked in the system by annotating the code. By this approach we improve usefulness of our tool for developers. Another approach can be inferring the invariants from logs of the system, our approach removes the burden from developers to decide which portion of node's state needs to be logged. We automatically infer variables that are likely to have invariants between them with data flow analysis.
