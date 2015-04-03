@@ -14,7 +14,7 @@ state variables of all nodes as distributed state of the system.
 %The most challenging part of this work is to find valid snapshots of distributed states for the system. 
 
 \section{Motivating Example}
-For motivation example, consider sudo-two-phase-commit protocol of figure \ref{lst:2pc}. In this protocol coordinator first queries other nodes for their vote and if all nodes including the coordinator vote ``Commit" then coordinator sends ``Commit", otherwise it sends ``Abort" to all other nodes. At the end of this protocol all nodes should either commit or abort . In order to verify that this algorithm is working correctly, developers can examine inferred invariants of the protocol execution and inspect if these inferred invariants match expected behaviour of the system (In this case commit value of all nodes should have the same value and this property should be inferred by executing the protocol). We use daikon \cite{ernst2001dynamically} to infer invariants between variables so we can infer linear ($y = ax + b$), ordering ($y < x$) and containment ($x \in y$) relationships that may hold between the distributed state variables of all nodes in the system.
+For motivation example, consider pseudo-two-phase-commit protocol of figure \ref{lst:2pc}. In this protocol coordinator first queries other nodes for their vote and if all nodes including the coordinator vote ``Commit" then coordinator sends ``Commit", otherwise it sends ``Abort" to all other nodes. At the end of this protocol all nodes should either commit or abort . In order to verify that this algorithm is working correctly, developers can examine inferred invariants of the protocol execution and inspect if these inferred invariants match expected behaviour of the system (In this case commit value of all nodes should have the same value and this property should be inferred by executing the protocol). We use daikon \cite{ernst2001dynamically} to infer invariants between variables so we can infer linear ($y = ax + b$), ordering ($y < x$) and containment ($x \in y$) relationships that may hold between the distributed state variables of all nodes in the system.
 
 
 \begin{figure}
@@ -41,7 +41,7 @@ else
 	recv(buf)
 	commit = buf
 \end{lstlisting}
-\caption{Sudo two phase commit code for coordinator and cohorts}
+\caption{Pseudo two phase commit code for coordinator and cohorts}
 \label{lst:2pc}
 \end{figure}
 
