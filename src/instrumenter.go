@@ -1,16 +1,18 @@
 package main
 
 import (
-	//"bytes"
+	"bytes"
 	"fmt"
 	"go/ast"
-	//"go/format"
 	"go/parser"
-	//"go/printer"
+	"go/printer"
 	"go/token"
-	//"os"
+	"os"
 	"strings"
 )
+
+var fset *token.FileSet
+var astFile *ast.File
 
 func main() {
 	src := `
@@ -20,6 +22,7 @@ package main
 import (
 	"fmt"
 )
+
 
 // This comment is associated with the hello constant.
 const hello = "Hello, World!" // line comment 1
@@ -38,22 +41,20 @@ func main() {
 	//@dump
 }
 `
-	instrument(src)
-
+	initializeInstrumenter(src)
+	addImports()
+	printer.Fprint(os.Stdout, fset, astFile)
 }
 
-func instrument(src string) {
+func initializeInstrumenter(src string) {
 	// Create the AST by parsing src.
-	fset := token.NewFileSet() // positions are relative to fset
-	f, err := parser.ParseFile(fset, "test_program.go", src, parser.ParseComments)
-	if err != nil {
-		panic(err)
-	}
+	fset = token.NewFileSet() // positions are relative to fset
+	astFile, _ = parser.ParseFile(fset, "test_program.go", src, parser.ParseComments)
 
 	// Print the AST.
-	ast.Print(fset, f)
+	//ast.Print(fset, astFile)
 
-	ast.Walk(new(ImportVisitor), f)
+	//ast.Walk(new(ImportVisitor), f)
 	//printer.Fprint(os.Stdout, fset, f)
 
 }
@@ -76,4 +77,105 @@ func (v *ImportVisitor) Visit(node ast.Node) (w ast.Visitor) {
 	}
 
 	return v
+}
+
+func GetAccessibleVarsInScope(lineNumber int) []string {
+	return nil
+}
+
+func GenerateDumpCode(vars []string, lineNumber int) string {
+	var buffer bytes.Buffer
+
+	// write vars' values
+	buffer.WriteString(fmt.Sprintf("vars%d := []interface{}{", lineNumber))
+
+	for i := 0; i < len(vars)-1; i++ {
+		buffer.WriteString(fmt.Sprintf("%s,", vars[i]))
+	}
+	buffer.WriteString(fmt.Sprintf("%s}\n", vars[len(vars)-1]))
+
+	// write vars' names
+	buffer.WriteString(fmt.Sprintf("varsName%d := []string{", lineNumber))
+
+	for i := 0; i < len(vars)-1; i++ {
+		buffer.WriteString(fmt.Sprintf("\"%s\",", vars[i]))
+	}
+	buffer.WriteString(fmt.Sprintf("\"%s\"}\n", vars[len(vars)-1]))
+
+	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varNames%d, %d)", lineNumber, lineNumber, lineNumber, lineNumber))
+
+	return buffer.String()
+}
+
+//func AddRequiredStructsToProgram() {
+//	code := `
+
+//var file bytes.Buffer
+//var logger *govec.GoLog
+//func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
+
+//	length := len(varNames)
+//	dumps := make([]NameValuePair, length)
+//	for i := 0; i < length; i++ {
+//		dumps[i].VarName = varNames[i]
+//		dumps[i].Value = vars[i]
+//		dumps[i].Type = reflect.TypeOf(vars[i]).String()
+//	}
+//	point := Point{dumps, lineNumber, logger.currentVC}
+
+//	return point
+//}
+
+//type Point struct {
+//	Dump       []NameValuePair
+//	LineNumber int
+//	vClock []byte
+//}
+
+//type NameValuePair struct {
+//	VarName string
+//	Value   interface{}
+//	Type    string
+//}
+
+//func (nvp NameValuePair) String() string {
+//	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
+//}
+
+//func (p Point) String() string {
+//	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
+//}`
+//}
+
+func addImports() {
+	packagesToImport := []string{"\"bytes\"", "\"encoding/gob\"", "\"reflect\"", "\"./govec\""}
+	im := ImportAdder{packagesToImport}
+	ast.Walk(im, astFile)
+	ast.SortImports(fset, astFile)
+
+}
+
+type ImportAdder struct {
+	PackagesToImport []string
+}
+
+func (im ImportAdder) Visit(node ast.Node) (w ast.Visitor) {
+	switch t := node.(type) {
+	case *ast.GenDecl:
+		if t.Tok == token.IMPORT {
+			newSpecs := make([]ast.Spec, len(t.Specs)+len(im.PackagesToImport))
+			for i, spec := range t.Specs {
+				newSpecs[i] = spec
+			}
+			for i, spec := range im.PackagesToImport {
+				newPackage := &ast.BasicLit{token.NoPos, token.STRING, spec}
+				newSpecs[len(t.Specs)+i] = &ast.ImportSpec{nil, nil, newPackage, nil, token.NoPos}
+			}
+
+			t.Specs = newSpecs
+			return im
+		}
+		return nil
+	}
+	return im
 }
