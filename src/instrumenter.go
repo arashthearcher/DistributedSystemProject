@@ -103,6 +103,7 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 	buffer.WriteString(fmt.Sprintf("\"%s\"}\n", vars[len(vars)-1]))
 
 	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varNames%d, %d)", lineNumber, lineNumber, lineNumber, lineNumber))
+	buffer.WriteString(fmt.Sprintf("encoder.Encode(point%d)", lineNumber))
 
 	return buffer.String()
 }
@@ -110,7 +111,11 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 //func AddRequiredStructsToProgram() {
 //	code := `
 
-//var file bytes.Buffer
+//var encoder gob.Encoder
+//func InstrumenterInit() {
+//	fileW, _ := os.Create("log.txt")
+//	encoder = gob.NewEncoder(fileW)
+//}
 //var logger *govec.GoLog
 //func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
