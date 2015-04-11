@@ -2,7 +2,7 @@
 package main
 
 import (
-	"./govec"
+	"./vclock"
 	"encoding/gob"
 	"fmt"
 	"os"
