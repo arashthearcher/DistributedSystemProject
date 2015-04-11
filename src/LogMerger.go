@@ -17,6 +17,49 @@ func main() {
 
 func mergeLogs(log1, log2 []Point) []Point {
 
+	mergedPoints := make([]Point, 0)
+	for i := 0; i < len(log1); i++ {
+
+		matchedPoints := findMatch(log1[i], log2)
+		for j := 0; j < len(matchedPoints); j++ {
+			mergedPoints = append(mergedPoints, mergePoints(matchedPoints[j], log1[i]))
+		}
+	}
+
+	return mergedPoints
+
+}
+
+func mergePoints(p1, p2 Point) Point {
+	var mergedPoint Point
+	mergedPoint.Dump = append(p1.Dump, p2.Dump...)
+	mergedPoint.LineNumber = p1.LineNumber + "-" + p2.LineNumber
+	pVClock1, err := vclock.FromBytes(p1.vectorClock)
+	printErr(err)
+	pVClock2, err2 := vclock.FromBytes(p2.vectorClock)
+	printErr(err2)
+	temp := pVClock1.Copy()
+	temp.Merge(pVClock2)
+	mergedPoint.vectorClock = temp.Bytes()
+
+	return mergedPoint
+
+}
+
+func findMatch(point Point, log []Point) []Point {
+	matched := make([]Point, 0)
+	pVClock, err := vclock.FromBytes(point.vectorClock)
+	printErr(err)
+	for i := 0; i < len(log); i++ {
+
+		otherVClock, err2 := vclock.FromBytes(log[i].vectorClock)
+		printErr(err2)
+		if pVClock.Matches(otherVClock) {
+			matched = append(matched, log[i])
+		}
+	}
+
+	return matched
 }
 
 func readLog(filePath string) []Point {
@@ -42,13 +85,13 @@ func readLog(filePath string) []Point {
 
 func printErr(err error) {
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 	}
 }
 
 type Point struct {
 	Dump        []NameValuePair
-	LineNumber  int
+	LineNumber  string
 	vectorClock []byte
 }
 

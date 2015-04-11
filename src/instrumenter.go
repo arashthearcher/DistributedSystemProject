@@ -132,9 +132,9 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 //}
 
 //type Point struct {
-//	Dump       []NameValuePair
-//	LineNumber int
-//	vClock []byte
+//	Dump        []NameValuePair
+//	LineNumber  string
+//	vectorClock []byte
 //}
 
 //type NameValuePair struct {
