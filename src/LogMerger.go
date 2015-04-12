@@ -15,6 +15,62 @@ func main() {
 
 }
 
+func writeLogToFile(log []Point) {
+
+	file, err := os.Create("daikonLog.txt")
+
+	mapOfPoints := createMapOfLogsForEachPoint(log)
+	writeDeclaration(file, mapOfPoints)
+	writeValues(file, log)
+
+}
+
+func createMapOfLogsForEachPoint(log []Point) map[string][]Point {
+	mapOfPoints := make(map[string][]Point, 0)
+
+	for i := 0; i < len(log); i++ {
+		mapOfPoints[log[i].LineNumber] = append(mapOfPoints[log[i].LineNumber], log[i])
+	}
+
+	return mapOfPoints
+}
+
+func writeDeclaration(file *os.File, mapOfPoints map[string][]Point) {
+
+	for k, v := range mapOfPoints {
+		point := v[0]
+		file.WriteString(fmt.Sprintf("ppt p-%s:::%s\n", point.LineNumber, point.LineNumber))
+		file.WriteString(fmt.Sprintf("ppt-type point\n"))
+
+		for i := 0; i < len(point.Dump); i++ {
+			file.WriteString(fmt.Sprintf("variable %s\n", point.Dump[i].VarName))
+			file.WriteString(fmt.Sprintf("var-kind variable\n"))
+			file.WriteString(fmt.Sprintf("dec-type %s\n", point.Dump[i].Type))
+			file.WriteString(fmt.Sprintf("rep-type %s\n", point.Dump[i].Type))
+			file.WriteString(fmt.Sprintf("comparability -1\n"))
+
+		}
+
+	}
+}
+
+func writeValues(file *os.File, log []Point) {
+	for i := range log {
+		point := log[i]
+		file.WriteString(fmt.Sprintf("p-%s:::%s\n", point.LineNumber, point.LineNumber))
+		file.WriteString(fmt.Sprintf("this_invocation_nonce\n"))
+		file.WriteString(fmt.Sprintf("%d\n", i))
+		for i := range point.Dump {
+			variable := point.Dump[i]
+			file.WriteString(fmt.Sprintf("%s\n", variable.VarName))
+			file.WriteString(fmt.Sprintf("%s\n", variable.Value))
+			file.WriteString(fmt.Sprintf("1\n"))
+
+		}
+
+	}
+}
+
 func mergeLogs(log1, log2 []Point) []Point {
 
 	mergedPoints := make([]Point, 0)
