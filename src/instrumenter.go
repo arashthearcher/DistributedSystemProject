@@ -7,7 +7,9 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -52,9 +54,28 @@ func initializeInstrumenter(src string) {
 	astFile, _ = parser.ParseFile(fset, "test_program.go", src, parser.ParseComments)
 
 	// Print the AST.
-	//ast.Print(fset, astFile)
+	ast.Print(fset, astFile)
 
-	//ast.Walk(new(ImportVisitor), f)
+	global_objs := astFile.Scope.Objects
+
+	var global_vars string = ""
+	for identifier, _ := range global_objs {
+		global_vars += fmt.Sprintf("%v, ", identifier)
+	}
+
+	fmt.Println("Global Vars: " + global_vars)
+
+	filePos := fset.File(astFile.Package)
+	path, _ := astutil.PathEnclosingInterval(astFile, filePos.Pos(410), filePos.Pos(412))
+
+	var pathStr string = ""
+	for _, astnode := range path {
+		pathStr += fmt.Sprintf("%v:%v -> ", astnode.Pos(), reflect.TypeOf(astnode))
+		//fmt.Println(astutil.NodeDescription(astnode))
+	}
+
+	fmt.Println(pathStr)
+	//ast.Walk(new(ImportVisitor), astFile)
 	//printer.Fprint(os.Stdout, fset, f)
 
 }
@@ -63,6 +84,9 @@ type ImportVisitor struct{}
 
 func (v *ImportVisitor) Visit(node ast.Node) (w ast.Visitor) {
 	switch t := node.(type) {
+	case *ast.Ident:
+		fmt.Println(t.Pos())
+		fmt.Println(t.Name)
 	case *ast.FuncDecl:
 		t.Name = ast.NewIdent(strings.Title(t.Name.Name))
 	case *ast.Comment:
