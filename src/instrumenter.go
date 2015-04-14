@@ -9,7 +9,7 @@ import (
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	"os"
-	"reflect"
+	//"reflect"
 	"strings"
 )
 
@@ -98,50 +98,31 @@ func collectVars(start int, file *ast.File) []string {
 
 	global_objs := file.Scope.Objects
 
-	var global_vars string = ""
 	for identifier, _ := range global_objs {
-		global_vars += fmt.Sprintf("%v, ", identifier)
 		results = append(results, fmt.Sprintf("%v, ", identifier))
 	}
 
-	fmt.Println("Global Vars: " + global_vars)
-
 	filePos := fset.File(file.Package)
 	path, _ := astutil.PathEnclosingInterval(file, filePos.Pos(start), filePos.Pos(start+2))
-
-	var pathStr string = ""
-	for _, astnode := range path {
-		pathStr += fmt.Sprintf("%v:%v -> ", astnode.Pos(), reflect.TypeOf(astnode))
-		//fmt.Println(astutil.NodeDescription(astnode))
-	}
 
 	for _, astnode := range path {
 
 		switch t := astnode.(type) {
 		case *ast.BlockStmt:
 
-			fmt.Println("*************")
-			fmt.Println(astutil.NodeDescription(t))
-			fmt.Println("*************")
-			fmt.Printf("Local variables:")
 			stmts := t.List
 			for _, stmtnode := range stmts {
-				//fmt.Println(fmt.Sprintf("%v > ", reflect.TypeOf(stmtnode)))
 				switch t := stmtnode.(type) {
 				case *ast.DeclStmt:
 					idents := t.Decl.(*ast.GenDecl).Specs[0].(*ast.ValueSpec).Names
 					for _, identifier := range idents {
-						fmt.Printf("%v", identifier.Name)
 						results = append(results, fmt.Sprintf("%v, ", identifier.Name))
 
 					}
 
-					//node := t.Decl
-					////node
 				}
 			}
 
-			fmt.Println("\n*************")
 		}
 	}
 
