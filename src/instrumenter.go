@@ -17,32 +17,60 @@ var fset *token.FileSet
 var astFile *ast.File
 
 func main() {
+	//src := `
+	//// This is the package comment.
+	//package main
+
+	//import (
+	//"fmt"
+	//)
+
+	//// This comment is associated with the hello constant.
+	//const hello = "Hello, World!" // line comment 1
+
+	//// This comment is associated with the foo variable.
+	//var foo = hello // line comment 2
+
+	////@dump This comment is associated with the main function.
+	//func main() {
+	////@dump
+	//fmt.Println(hello) // line comment 3
+	//fmt.Println("a")
+	//hello = b
+	//c = hello
+	//fmt.Println(foo) //@dump
+	////@dump
+	//}
+	//`
 	src := `
-// This is the package comment.
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
+var gx = "Goodbye"
 
-// This comment is associated with the hello constant.
-const hello = "Hello, World!" // line comment 1
-
-// This comment is associated with the foo variable.
-var foo = hello // line comment 2
-
-//@dump This comment is associated with the main function.
 func main() {
-	//@dump
-	fmt.Println(hello) // line comment 3
-	fmt.Println("a")
-	hello = b
-	c = hello
-	fmt.Println(foo) //@dump
-	//@dump
+	var z,x = "Hello"
+	fmt.Println(x)
+	x = "new"
+	fmt.Println(gx)
+	for {
+		var amt = 1
+		fmt.Println("inside incr")
+		return x + amt
+	}
+	fmt.Println(inc(2))
+	f()
+
+}
+
+func f() {
+	y := "Rocky"
+	fmt.Println(y)
+	fmt.Println(gx)
 }
 `
+
 	initializeInstrumenter(src)
 	addImports()
 	printer.Fprint(os.Stdout, fset, astFile)
@@ -56,17 +84,30 @@ func initializeInstrumenter(src string) {
 	// Print the AST.
 	ast.Print(fset, astFile)
 
-	global_objs := astFile.Scope.Objects
+	collectVars(149, astFile)
+
+	//fmt.Println(pathStr)
+
+	//ast.Walk(new(ImportVisitor), astFile)
+	//printer.Fprint(os.Stdout, fset, f)
+
+}
+
+func collectVars(start int, file *ast.File) []string {
+	var results []string
+
+	global_objs := file.Scope.Objects
 
 	var global_vars string = ""
 	for identifier, _ := range global_objs {
 		global_vars += fmt.Sprintf("%v, ", identifier)
+		results = append(results, fmt.Sprintf("%v, ", identifier))
 	}
 
 	fmt.Println("Global Vars: " + global_vars)
 
-	filePos := fset.File(astFile.Package)
-	path, _ := astutil.PathEnclosingInterval(astFile, filePos.Pos(410), filePos.Pos(412))
+	filePos := fset.File(file.Package)
+	path, _ := astutil.PathEnclosingInterval(file, filePos.Pos(start), filePos.Pos(start+2))
 
 	var pathStr string = ""
 	for _, astnode := range path {
@@ -74,10 +115,37 @@ func initializeInstrumenter(src string) {
 		//fmt.Println(astutil.NodeDescription(astnode))
 	}
 
-	fmt.Println(pathStr)
-	//ast.Walk(new(ImportVisitor), astFile)
-	//printer.Fprint(os.Stdout, fset, f)
+	for _, astnode := range path {
 
+		switch t := astnode.(type) {
+		case *ast.BlockStmt:
+
+			fmt.Println("*************")
+			fmt.Println(astutil.NodeDescription(t))
+			fmt.Println("*************")
+			fmt.Printf("Local variables:")
+			stmts := t.List
+			for _, stmtnode := range stmts {
+				//fmt.Println(fmt.Sprintf("%v > ", reflect.TypeOf(stmtnode)))
+				switch t := stmtnode.(type) {
+				case *ast.DeclStmt:
+					idents := t.Decl.(*ast.GenDecl).Specs[0].(*ast.ValueSpec).Names
+					for _, identifier := range idents {
+						fmt.Printf("%v", identifier.Name)
+						results = append(results, fmt.Sprintf("%v, ", identifier.Name))
+
+					}
+
+					//node := t.Decl
+					////node
+				}
+			}
+
+			fmt.Println("\n*************")
+		}
+	}
+
+	return results
 }
 
 type ImportVisitor struct{}
@@ -88,7 +156,7 @@ func (v *ImportVisitor) Visit(node ast.Node) (w ast.Visitor) {
 		fmt.Println(t.Pos())
 		fmt.Println(t.Name)
 	case *ast.FuncDecl:
-		t.Name = ast.NewIdent(strings.Title(t.Name.Name))
+		//t.Name = ast.NewIdent(strings.Title(t.Name.Name))
 	case *ast.Comment:
 		if strings.Contains(t.Text, "@dump") {
 			fmt.Println("dump encountered!")

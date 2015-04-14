@@ -8,7 +8,7 @@ func main() {
 	x := "Hello"
 	fmt.Println(x)
 	fmt.Println(gx)
-	inc := func(x int) int {
+	for {
 		var amt = 1
 		fmt.Println("inside incr")
 		return x + amt
