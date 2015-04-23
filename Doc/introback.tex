@@ -21,22 +21,22 @@ For motivation example, consider pseudo-two-phase-commit protocol of figure \ref
 \centering
 \begin{lstlisting}[caption={Coordinator Code}]
 for i := 1 to n do
-	send('Q',i)
+	send('Query',i)
 commit := decide()
 for i:= 1 to n do
 	recv(buf,i)
-	if (buf == 'A')
-		commit := 'A'
+	if (buf == 'Abort')
+		commit := 'Abort'
 for i := 1 to n
 	send(commit, i)
 \end{lstlisting}
 \begin{lstlisting}[caption={Coordinator Code}]
 recv(buf)
-if(buf == 'Q')
+if(buf == 'Query')
 	vote:= decide()
 	send(vote)
-if (vote == 'A')
-	commit = 'A'
+if (vote == 'Abort')
+	commit = 'Abort'
 else
 	recv(buf)
 	commit = buf

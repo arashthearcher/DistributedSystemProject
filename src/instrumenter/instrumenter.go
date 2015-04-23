@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
-	"go/printer"
+	//"go/printer"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
-	"os"
+	//"os"
 	//"reflect"
 	"strings"
 )
@@ -17,74 +17,26 @@ var fset *token.FileSet
 var astFile *ast.File
 
 func main() {
-	//src := `
-	//// This is the package comment.
-	//package main
-
-	//import (
-	//"fmt"
-	//)
-
-	//// This comment is associated with the hello constant.
-	//const hello = "Hello, World!" // line comment 1
-
-	//// This comment is associated with the foo variable.
-	//var foo = hello // line comment 2
-
-	////@dump This comment is associated with the main function.
-	//func main() {
-	////@dump
-	//fmt.Println(hello) // line comment 3
-	//fmt.Println("a")
-	//hello = b
-	//c = hello
-	//fmt.Println(foo) //@dump
-	////@dump
-	//}
-	//`
-	src := `
-package main
-
-import "fmt"
-
-var gx = "Goodbye"
-
-func main() {
-	var z,x = "Hello"
-	fmt.Println(x)
-	x = "new"
-	fmt.Println(gx)
-	for {
-		var amt = 1
-		fmt.Println("inside incr")
-		return x + amt
-	}
-	fmt.Println(inc(2))
-	f()
-
-}
-
-func f() {
-	y := "Rocky"
-	fmt.Println(y)
-	fmt.Println(gx)
-}
-`
-
-	initializeInstrumenter(src)
+	initializeInstrumenter()
+	dumpNodes := GetDumpNodes()
 	addImports()
-	printer.Fprint(os.Stdout, fset, astFile)
+
+	for _, dumps := range dumpNodes {
+		fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
+	}
+
+	//printer.Fprint(os.Stdout, fset, astFile)
 }
 
-func initializeInstrumenter(src string) {
+func initializeInstrumenter() {
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
-	astFile, _ = parser.ParseFile(fset, "test_program.go", src, parser.ParseComments)
+	astFile, _ = parser.ParseFile(fset, "../TestPrograms/serverUDP.go", nil, parser.ParseComments)
 
 	// Print the AST.
 	ast.Print(fset, astFile)
 
-	collectVars(149, astFile)
+	//collectVars(149, astFile)
 
 	//fmt.Println(pathStr)
 
@@ -93,7 +45,7 @@ func initializeInstrumenter(src string) {
 
 }
 
-func collectVars(start int, file *ast.File) []string {
+func GetAccessibleVarsInScope(start int, file *ast.File) []string {
 	var results []string
 
 	global_objs := file.Scope.Objects
@@ -129,33 +81,35 @@ func collectVars(start int, file *ast.File) []string {
 	return results
 }
 
-type ImportVisitor struct{}
-
-func (v *ImportVisitor) Visit(node ast.Node) (w ast.Visitor) {
-	switch t := node.(type) {
-	case *ast.Ident:
-		fmt.Println(t.Pos())
-		fmt.Println(t.Name)
-	case *ast.FuncDecl:
-		//t.Name = ast.NewIdent(strings.Title(t.Name.Name))
-	case *ast.Comment:
-		if strings.Contains(t.Text, "@dump") {
-			fmt.Println("dump encountered!")
-			fmt.Println(t.Text)
-
+func GetDumpNodes() []*ast.Comment {
+	var dumpNodes []*ast.Comment
+	for _, commentGroup := range astFile.Comments {
+		for _, comment := range commentGroup.List {
+			if strings.Contains(comment.Text, "@dump") {
+				dumpNodes = append(dumpNodes, comment)
+			}
 		}
-	case *ast.AssignStmt:
-		fmt.Println(fmt.Sprintf("%v", t.Rhs[0]) + " -> " + fmt.Sprintf("%v", t.Lhs[0]))
-
 	}
-
-	return v
+	return dumpNodes
 }
 
-func GetAccessibleVarsInScope(lineNumber int) []string {
-	return nil
-}
+//type DumpVisitor struct{}
 
+//func (v DumpVisitor) Visit(node ast.Node) (w ast.Visitor) {
+//	//fmt.Println(node)
+//	switch t := node.(type) {
+//	case *ast.Comment:
+
+//		if strings.Contains(t.Text, "@dump") {
+//			fmt.Println("dump encountered !!")
+//			dumpNodes = append(dumpNodes, t)
+//		}
+//	}
+
+//	return v
+//}
+
+// returns dump code that should replace that specific line number
 func GenerateDumpCode(vars []string, lineNumber int) string {
 	var buffer bytes.Buffer
 
@@ -251,9 +205,8 @@ func (im ImportAdder) Visit(node ast.Node) (w ast.Visitor) {
 			}
 
 			t.Specs = newSpecs
-			return im
+			return nil
 		}
-		return nil
 	}
 	return im
 }
