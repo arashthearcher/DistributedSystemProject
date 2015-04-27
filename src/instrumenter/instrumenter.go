@@ -22,7 +22,7 @@ func main() {
 	addImports()
 
 	for _, dumps := range dumpNodes {
-		fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
+		fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash)))
 	}
 
 	//printer.Fprint(os.Stdout, fset, astFile)
@@ -45,17 +45,18 @@ func initializeInstrumenter() {
 
 }
 
-func GetAccessibleVarsInScope(start int, file *ast.File) []string {
+func GetAccessibleVarsInScope(start int) []string {
+	fmt.Println(start)
 	var results []string
 
-	global_objs := file.Scope.Objects
+	global_objs := astFile.Scope.Objects
 
 	for identifier, _ := range global_objs {
 		results = append(results, fmt.Sprintf("%v, ", identifier))
 	}
 
-	filePos := fset.File(file.Package)
-	path, _ := astutil.PathEnclosingInterval(file, filePos.Pos(start), filePos.Pos(start+2))
+	filePos := fset.File(astFile.Package)
+	path, _ := astutil.PathEnclosingInterval(astFile, filePos.Pos(start), filePos.Pos(start+2))
 
 	for _, astnode := range path {
 
