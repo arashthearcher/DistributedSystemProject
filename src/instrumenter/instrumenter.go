@@ -37,6 +37,7 @@ func main() {
 	for _, dumps := range dumpNodes {
 		//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
 		fmt.Println(GetAccessedVarsInScope(dumps, astFile, c.f))
+
 	}
 
 	//printer.Fprint(os.Stdout, fset, astFile)
@@ -199,16 +200,17 @@ func GetAccessedVarsInScope(dumpNode *ast.Comment, f *ast.File, g *ast.File) []s
 }
 
 func GetAccessibleVarsInScope(start int, file *ast.File) []string {
+
 	var results []string
 
-	global_objs := file.Scope.Objects
+	global_objs := astFile.Scope.Objects
 
 	for identifier, _ := range global_objs {
 		results = append(results, fmt.Sprintf("%v, ", identifier))
 	}
 
-	filePos := fset.File(file.Package)
-	path, _ := astutil.PathEnclosingInterval(file, filePos.Pos(start), filePos.Pos(start+2))
+	filePos := fset.File(astFile.Package)
+	path, _ := astutil.PathEnclosingInterval(astFile, filePos.Pos(start), filePos.Pos(start+2))
 
 	for _, astnode := range path {
 		//fmt.Println("%v", astutil.NodeDescription(astnode))
