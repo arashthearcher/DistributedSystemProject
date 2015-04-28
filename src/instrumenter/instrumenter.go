@@ -39,8 +39,7 @@ func main() {
 		fmt.Println(GetAccessedVarsInScope(dumps, astFile, c.f))
 
 	}
-
-	//printer.Fprint(os.Stdout, fset, astFile)
+	fmt.Println(detectSendReceive(astFile))
 }
 
 func initializeInstrumenter() {
@@ -55,7 +54,7 @@ func initializeInstrumenter() {
 
 	//astFile = c.f
 
-	//ast.Print(fset, astFile)
+	ast.Print(fset, astFile)
 
 	//collectVars(149, astFile)
 
@@ -64,6 +63,32 @@ func initializeInstrumenter() {
 	//ast.Walk(new(ImportVisitor), astFile)
 	//printer.Fprint(os.Stdout, fset, f)
 
+}
+
+func detectSendReceive(f *ast.File) []*ast.Node {
+	var results []*ast.Node
+	ast.Inspect(f, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.CallExpr:
+			switch y := x.Fun.(type) {
+			case *ast.SelectorExpr:
+				left, ok := y.X.(*ast.Ident)
+				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" || y.Sel.Name == "WriteTo" {
+
+					fmt.Println(left.Name, y.Sel.Name)
+
+					results = append(results, &n)
+
+				}
+
+			}
+
+			return true
+		}
+
+		return true
+	})
+	return results
 }
 
 func GetAccessedVarsInScope(dumpNode *ast.Comment, f *ast.File, g *ast.File) []string {
