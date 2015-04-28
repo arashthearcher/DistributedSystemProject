@@ -51,6 +51,7 @@ type Block struct {
 	SuccBs     []*Block
 	dom        domInfo
 	ControlDep []*Block
+	DataDep    []*Block
 }
 
 func (c *CFG) InitializeBlocks() {
@@ -157,6 +158,22 @@ splines="ortho";
 `)
 	for _, v := range c.Blocks {
 		for _, a := range v.ControlDep {
+			fmt.Fprintf(f, "\t\"%s\" -> \"%s\"\n",
+				c.printVertex(v, fset, addl(v.Stmt)),
+				c.printVertex(a, fset, addl(a.Stmt)))
+		}
+	}
+	fmt.Fprintf(f, "}\n")
+}
+
+func (c *CFG) PrintDataDepDot(f io.Writer, fset *token.FileSet, addl func(n ast.Stmt) string) {
+	fmt.Fprintf(f, `digraph mgraph {
+mode="heir";
+splines="ortho";
+
+`)
+	for _, v := range c.Blocks {
+		for _, a := range v.DataDep {
 			fmt.Fprintf(f, "\t\"%s\" -> \"%s\"\n",
 				c.printVertex(v, fset, addl(v.Stmt)),
 				c.printVertex(a, fset, addl(a.Stmt)))
