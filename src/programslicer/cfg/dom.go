@@ -57,6 +57,7 @@ func (invC *CFG) FindControlDeps() {
 				n := x
 				for n != c.dom.idom && n != nil {
 					n.ControlDep = append(n.ControlDep, c)
+					c.ControlDepee = append(c.ControlDepee, n)
 					n = n.dom.idom
 				}
 			}

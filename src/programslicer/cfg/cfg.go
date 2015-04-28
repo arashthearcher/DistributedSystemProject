@@ -43,15 +43,17 @@ type CFG struct {
 }
 
 type Block struct {
-	Index      int
-	Stmt       ast.Stmt
-	Preds      []ast.Stmt
-	Succs      []ast.Stmt
-	PredBs     []*Block
-	SuccBs     []*Block
-	dom        domInfo
-	ControlDep []*Block
-	DataDep    []*Block
+	Index        int
+	Stmt         ast.Stmt
+	Preds        []ast.Stmt
+	Succs        []ast.Stmt
+	PredBs       []*Block
+	SuccBs       []*Block
+	dom          domInfo
+	ControlDep   []*Block
+	ControlDepee []*Block
+	DataDep      []*Block
+	DataDepee    []*Block
 }
 
 func (c *CFG) InitializeBlocks() {
@@ -94,6 +96,8 @@ func (c *CFG) InvertCFG() *CFG {
 		invB.Stmt = b.Stmt
 		invB.Preds = b.Succs
 		invB.Succs = b.Preds
+		invB.DataDep = b.DataDep
+		invB.DataDepee = b.DataDepee
 		invCFG.Blocks[invB.Stmt] = invB
 	}
 	invCFG.InitializeBlocks()

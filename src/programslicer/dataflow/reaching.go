@@ -62,6 +62,7 @@ func CreateDataDepGraph(cfg *cfg.CFG, info *loader.PackageInfo) {
 			defVars := defs(defStmt, info)
 			if intersectDefUse(defVars, useVars) {
 				useB.DataDep = append(useB.DataDep, defB)
+				defB.DataDepee = append(defB.DataDepee, useB)
 			}
 
 		}
