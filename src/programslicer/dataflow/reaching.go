@@ -7,7 +7,7 @@ package dataflow
 import (
 	"go/ast"
 
-	"github.com/godoctor/godoctor/analysis/cfg"
+	"../cfg"
 	"github.com/willf/bitset"
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
@@ -40,13 +40,41 @@ func ReachingDefs(cfg *cfg.CFG, info *loader.PackageInfo) (in, out map[ast.Stmt]
 	return reachingDefResultSets(blocks, ins, outs)
 }
 
+func intersectDefUse(defVars, useVars []*types.Var) bool {
+	for _, def := range defVars {
+		for _, use := range useVars {
+			if def == use {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func CreateDataDepGraph(cfg *cfg.CFG, info *loader.PackageInfo) {
+
+	ins, _ := ReachingDefs(cfg, info)
+	for useStmt, defMap := range ins {
+		useB := cfg.Blocks[useStmt]
+		useVars := uses(useStmt, info)
+		for defStmt, _ := range defMap {
+			defB := cfg.Blocks[defStmt]
+			defVars := defs(defStmt, info)
+			if intersectDefUse(defVars, useVars) {
+				useB.DataDep = append(useB.DataDep, defB)
+			}
+
+		}
+	}
+}
+
 // genKillBitsets builds the gen and kill bitsets for each block in a cfg,
 // these are used to compute reaching definitions.
 func genKillBitsets(cfg *cfg.CFG, info *loader.PackageInfo) (blocks []ast.Stmt, gen, kill map[ast.Stmt]*bitset.BitSet) {
 	okills := make(map[*types.Var]*bitset.BitSet)
 	gen = make(map[ast.Stmt]*bitset.BitSet)
 	kill = make(map[ast.Stmt]*bitset.BitSet)
-	blocks = cfg.Blocks()
+	blocks = cfg.GetBlocks()
 
 	for _, b := range blocks { // prime
 		gen[b] = new(bitset.BitSet)
@@ -79,7 +107,7 @@ func genKillBitsets(cfg *cfg.CFG, info *loader.PackageInfo) (blocks []ast.Stmt, 
 func reachingDefBitsets(cfg *cfg.CFG, gen, kill map[ast.Stmt]*bitset.BitSet) (in, out map[ast.Stmt]*bitset.BitSet) {
 	in = make(map[ast.Stmt]*bitset.BitSet)
 	out = make(map[ast.Stmt]*bitset.BitSet)
-	blocks := cfg.Blocks()
+	blocks := cfg.GetBlocks()
 
 	// OUT[ENTRY] = {};
 	// for(each basic block B other than ENTRY) OUT[B} = {};
