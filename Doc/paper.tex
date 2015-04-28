@@ -63,12 +63,14 @@
 % should be used if it is desired that the figures are to be displayed in
 % draft mode.
 %
-\documentclass[conference]{IEEEtran}
+%\documentclass[conference]{IEEEtran}
 % Add the compsoc option for Computer Society conferences.
 %
 % If IEEEtran.cls has not been installed into the LaTeX system files,
 % manually specify the path to it like:
 % \documentclass[conference]{../sty/IEEEtran}
+
+\documentclass[runningheads,a4paper]{llncs}
 
 
 
@@ -126,14 +128,14 @@
 
 % *** GRAPHICS RELATED PACKAGES ***
 %
-\ifCLASSINFOpdf
+%\ifCLASSINFOpdf
   % \usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-\else
+%\else
   % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
   % will default to the driver specified in the system graphics.cfg if no
   % driver is specified.
@@ -143,7 +145,7 @@
   % and their extensions so you won't have to specify these with
   % every instance of \includegraphics
   % \DeclareGraphicsExtensions{.eps}
-\fi
+%\fi
 % graphicx was written by David Carlisle and Sebastian Rahtz. It is
 % required if you want graphics, photos, etc. graphicx.sty is already
 % installed on most LaTeX systems. The latest version and documentation can
@@ -394,12 +396,20 @@
 % author names and affiliations
 % use a multiple column layout for up to three different
 % affiliations
-\author{\IEEEauthorblockN{Keheliya Gallaba\IEEEauthorrefmark{1},
-Arash Vahabzadeh\IEEEauthorrefmark{2}}
-\IEEEauthorblockA{University of British Columbia\\
-Vancouver, BC, Canada\\
-Email: \IEEEauthorrefmark{1}kgallaba@ece.ubc.ca,
-\IEEEauthorrefmark{2}arashvhb@ece.ubc.ca}}
+
+\author{Arash Vahabzadeh \and Keheliya Gallaba}
+\institute{University of British Columbia,\\
+Vancouver, Canada\\
+\mailsa}
+
+\urldef{\mailsa}\path|{arashvhb,kgallaba}@ece.ubc.ca| 
+
+% \author{\IEEEauthorblockN{Keheliya Gallaba\IEEEauthorrefmark{1},
+% Arash Vahabzadeh\IEEEauthorrefmark{2}}
+% \IEEEauthorblockA{University of British Columbia\\
+% Vancouver, BC, Canada\\
+% Email: \IEEEauthorrefmark{1}kgallaba@ece.ubc.ca,
+% \IEEEauthorrefmark{2}arashvhb@ece.ubc.ca}}
 
 % conference papers do not typically use \thanks and this command
 % is locked out in conference mode. If really needed, such as for
@@ -460,7 +470,7 @@ Email: \IEEEauthorrefmark{1}kgallaba@ece.ubc.ca,
 %
 % For peerreview papers, this IEEEtran command inserts a page break and
 % creates the second title. It will be ignored for other modes.
-\IEEEpeerreviewmaketitle
+%\IEEEpeerreviewmaketitle
 
 
 
