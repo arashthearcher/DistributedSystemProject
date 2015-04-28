@@ -43,13 +43,14 @@ type CFG struct {
 }
 
 type Block struct {
-	Index  int
-	Stmt   ast.Stmt
-	Preds  []ast.Stmt
-	Succs  []ast.Stmt
-	PredBs []*Block
-	SuccBs []*Block
-	dom    domInfo
+	Index      int
+	Stmt       ast.Stmt
+	Preds      []ast.Stmt
+	Succs      []ast.Stmt
+	PredBs     []*Block
+	SuccBs     []*Block
+	dom        domInfo
+	ControlDep []*Block
 }
 
 func (c *CFG) InitializeBlocks() {
@@ -143,6 +144,22 @@ splines="ortho";
 			fmt.Fprintf(f, "\t\"%s\" -> \"%s\"\n",
 				c.printVertex(v, fset, addl(v.Stmt)),
 				c.printVertex(c.Blocks[a], fset, addl(c.Blocks[a].Stmt)))
+		}
+	}
+	fmt.Fprintf(f, "}\n")
+}
+
+func (c *CFG) PrintControlDepDot(f io.Writer, fset *token.FileSet, addl func(n ast.Stmt) string) {
+	fmt.Fprintf(f, `digraph mgraph {
+mode="heir";
+splines="ortho";
+
+`)
+	for _, v := range c.Blocks {
+		for _, a := range v.ControlDep {
+			fmt.Fprintf(f, "\t\"%s\" -> \"%s\"\n",
+				c.printVertex(v, fset, addl(v.Stmt)),
+				c.printVertex(a, fset, addl(a.Stmt)))
 		}
 	}
 	fmt.Fprintf(f, "}\n")

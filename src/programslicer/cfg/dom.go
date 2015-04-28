@@ -33,6 +33,45 @@ import (
 // (b==b.Parent().Recover()) have a parent.
 //
 
+func contains(s []*Block, e *Block) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+//Consider all inverted CFG edges (x,c) such that x does not
+//dominate c (therefore, c is a branch node)
+//• Traverse the post‐dominator tree bottom‐up –n=x
+//– while (n != parent of c in the post‐dominator tree) • report that n is control dependent on c
+//• n = parent of n in the post‐dominator tree
+
+func (invC *CFG) FindControlDeps() {
+
+	// CFG is inverted
+	for _, x := range invC.BlockSlice {
+		for _, c := range x.SuccBs {
+			if !x.Dominates(c) {
+				n := x
+				for n != c.dom.idom && n != nil {
+					n.ControlDep = append(n.ControlDep, c)
+					n = n.dom.idom
+				}
+			}
+		}
+	}
+
+}
+
+func (c *CFG) BuildPostDomTree() *CFG {
+	c.InitializeBlocks()
+	invC := c.InvertCFG()
+	BuildDomTree(invC)
+	return invC
+}
+
 func (b *Block) String() string { return astutil.NodeDescription(b.Stmt) }
 
 func (b *Block) Idom() *Block { return b.dom.idom }
