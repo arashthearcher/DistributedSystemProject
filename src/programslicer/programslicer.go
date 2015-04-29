@@ -9,6 +9,7 @@ import (
 	"go/ast"
 	"go/token"
 	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/types"
 )
 
 // Create CFG
@@ -71,6 +72,32 @@ func ComputeForwardSlice(start ast.Stmt, cfg *cfg.CFG, info *loader.PackageInfo,
 	}
 
 	return slice
+}
+
+func GetBackwardAffectedVariables(start ast.Stmt, cfg *cfg.CFG, info *loader.PackageInfo, fset *token.FileSet) []*types.Var {
+
+	stmts := ComputeBackwardSlice(start, cfg, info, fset)
+	defs, _ := dataflow.ReferencedVars(stmts, info)
+
+	var affectedVars []*types.Var
+	for def := range defs {
+		affectedVars = append(affectedVars, def)
+	}
+
+	return affectedVars
+}
+
+func GetForwardAffectedVariables(start ast.Stmt, cfg *cfg.CFG, info *loader.PackageInfo, fset *token.FileSet) []*types.Var {
+
+	stmts := ComputeForwardSlice(start, cfg, info, fset)
+	defs, _ := dataflow.ReferencedVars(stmts, info)
+
+	var affectedVars []*types.Var
+	for def := range defs {
+		affectedVars = append(affectedVars, def)
+	}
+
+	return affectedVars
 }
 
 func ComputeBackwardSlice(start ast.Stmt, cfg *cfg.CFG, info *loader.PackageInfo, fset *token.FileSet) []ast.Stmt {
@@ -201,11 +228,12 @@ func main() {
 
 	ast.Print(prog.Fset, funcOne.Body.List)
 	fmt.Println("computing slice ...")
-	slice := ComputeForwardSlice(funcOne.Body.List[0], c, prog.Created[0], prog.Fset)
+	slice := GetForwardAffectedVariables(funcOne.Body.List[1], c, prog.Created[0], prog.Fset)
 	fmt.Println("slice")
 	fmt.Println(len(slice))
 	for _, s := range slice {
-		fmt.Println(prog.Fset.Position(s.Pos()).Line)
+		//fmt.Println(prog.Fset.Position(s.Pos()).Line)
+		fmt.Println(s.Name())
 	}
 
 }
