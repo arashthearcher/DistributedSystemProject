@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
-	//"go/printer"
+	"go/printer"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 	//"os"
 	//"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -30,19 +31,34 @@ var astFile *ast.File
 var c *CFGWrapper
 
 func main() {
-	initializeInstrumenter()
+	source := initializeInstrumenter()
 	dumpNodes := GetDumpNodes()
 	addImports()
 
-	for _, dumps := range dumpNodes {
+	var generated_code []string
+	for _, dump := range dumpNodes {
 		//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
-		fmt.Println(GetAccessedVarsInScope(dumps, astFile, c.f))
+		fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
+		line := c.fset.Position(dump.Pos()).Line
+		fmt.Println(line)
+		generated_code = append(generated_code, GenerateDumpCode(GetAccessedVarsInScope(dump, astFile, c.f), line))
 
 	}
+	count := 0
+	rp := regexp.MustCompile("\\/\\/@dump")
+	transformed := rp.ReplaceAllStringFunc(source, func(s string) string {
+		replacement := generated_code[count]
+		count++
+		return replacement
+	})
+
+	fmt.Println(transformed)
+
 	fmt.Println(detectSendReceive(astFile))
+
 }
 
-func initializeInstrumenter() {
+func initializeInstrumenter() string {
 	src_location := "../TestPrograms/serverUDP.go"
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
@@ -51,8 +67,20 @@ func initializeInstrumenter() {
 	// Print the AST.
 
 	c = getWrapper(nil, src_location)
-
 	ast.Print(fset, astFile)
+
+	//var buf bytes.Buffer
+	//if err := format.Node(&buf, fset, f); err != nil {
+	//return nil, err
+	//}
+	//return buf.Bytes(), nil
+
+	var buf bytes.Buffer
+	printer.Fprint(&buf, fset, astFile)
+
+	s := buf.String()
+
+	return s
 
 	//fmt.Println(pathStr)
 
@@ -282,6 +310,10 @@ func GetDumpNodes() []*ast.Comment {
 
 // returns dump code that should replace that specific line number
 func GenerateDumpCode(vars []string, lineNumber int) string {
+	if len(vars) == 0 {
+		return ""
+	}
+
 	var buffer bytes.Buffer
 
 	// write vars' values
@@ -300,7 +332,7 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 	}
 	buffer.WriteString(fmt.Sprintf("\"%s\"}\n", vars[len(vars)-1]))
 
-	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varNames%d, %d)", lineNumber, lineNumber, lineNumber, lineNumber))
+	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varNames%d, %d)\n", lineNumber, lineNumber, lineNumber, lineNumber))
 	buffer.WriteString(fmt.Sprintf("encoder.Encode(point%d)", lineNumber))
 
 	return buffer.String()
