@@ -33,14 +33,13 @@ var c *CFGWrapper
 func main() {
 	source := initializeInstrumenter()
 	dumpNodes := GetDumpNodes()
-	addImports()
 
 	var generated_code []string
 	for _, dump := range dumpNodes {
 		//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
-		fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
+		//fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
 		line := c.fset.Position(dump.Pos()).Line
-		fmt.Println(line)
+		//fmt.Println(line)
 		generated_code = append(generated_code, GenerateDumpCode(GetAccessedVarsInScope(dump, astFile, c.f), line))
 
 	}
@@ -52,9 +51,9 @@ func main() {
 		return replacement
 	})
 
+	transformed = transformed + "\n" + extra_code
 	fmt.Println(transformed)
-
-	fmt.Println(detectSendReceive(astFile))
+	//fmt.Println(detectSendReceive(astFile))
 
 }
 
@@ -67,7 +66,9 @@ func initializeInstrumenter() string {
 	// Print the AST.
 
 	c = getWrapper(nil, src_location)
-	ast.Print(fset, astFile)
+	//ast.Print(fset, astFile)
+
+	addImports()
 
 	//var buf bytes.Buffer
 	//if err := format.Node(&buf, fset, f); err != nil {
@@ -98,7 +99,7 @@ func detectSendReceive(f *ast.File) []*ast.Node {
 			case *ast.SelectorExpr:
 				left, ok := y.X.(*ast.Ident)
 				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" || y.Sel.Name == "WriteTo" {
-					fmt.Println(left.Name, y.Sel.Name)
+					//fmt.Println(left.Name, y.Sel.Name)
 					results = append(results, &n)
 				}
 			}
@@ -332,58 +333,56 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 	}
 	buffer.WriteString(fmt.Sprintf("\"%s\"}\n", vars[len(vars)-1]))
 
-	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varNames%d, %d)\n", lineNumber, lineNumber, lineNumber, lineNumber))
+	buffer.WriteString(fmt.Sprintf("point%d := createPoint(vars%d, varsName%d, %d)\n", lineNumber, lineNumber, lineNumber, lineNumber))
 	buffer.WriteString(fmt.Sprintf("encoder.Encode(point%d)", lineNumber))
 
 	return buffer.String()
 }
 
-//func AddRequiredStructsToProgram() {
-//	code := `
+var extra_code string = `
 
-//var encoder gob.Encoder
-//func InstrumenterInit() {
-//	fileW, _ := os.Create("log.txt")
-//	encoder = gob.NewEncoder(fileW)
-//}
-//var logger *govec.GoLog
-//func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
+var encoder *gob.Encoder
+func InstrumenterInit() {
+	fileW, _ := os.Create("log.txt")
+	encoder = gob.NewEncoder(fileW)
+}
+var logger *govec.GoLog
+func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
-//	length := len(varNames)
-//	dumps := make([]NameValuePair, length)
-//	for i := 0; i < length; i++ {
-//		dumps[i].VarName = varNames[i]
-//		dumps[i].Value = vars[i]
-//		dumps[i].Type = reflect.TypeOf(vars[i]).String()
-//	}
-//	point := Point{dumps, lineNumber, logger.currentVC}
+	length := len(varNames)
+	dumps := make([]NameValuePair, length)
+	for i := 0; i < length; i++ {
+		dumps[i].VarName = varNames[i]
+		dumps[i].Value = vars[i]
+		dumps[i].Type = reflect.TypeOf(vars[i]).String()
+	}
+	point := Point{dumps, lineNumber, logger.currentVC}
 
-//	return point
-//}
+	return point
+}
 
-//type Point struct {
-//	Dump        []NameValuePair
-//	LineNumber  string
-//	vectorClock []byte
-//}
+type Point struct {
+	Dump        []NameValuePair
+	LineNumber  int
+	vectorClock []byte
+}
 
-//type NameValuePair struct {
-//	VarName string
-//	Value   interface{}
-//	Type    string
-//}
+type NameValuePair struct {
+	VarName string
+	Value   interface{}
+	Type    string
+}
 
-//func (nvp NameValuePair) String() string {
-//	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
-//}
+func (nvp NameValuePair) String() string {
+	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
+}
 
-//func (p Point) String() string {
-//	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
-//}`
-//}
+func (p Point) String() string {
+	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
+}`
 
 func addImports() {
-	packagesToImport := []string{"\"bytes\"", "\"encoding/gob\"", "\"reflect\"", "\"./govec\""}
+	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\"", "\"../govec\""}
 	im := ImportAdder{packagesToImport}
 	ast.Walk(im, astFile)
 	ast.SortImports(fset, astFile)
