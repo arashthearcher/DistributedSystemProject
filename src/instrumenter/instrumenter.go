@@ -22,7 +22,7 @@ import (
 
 const (
 	START = 0
-	END   = 100000000 // if there's this many statements, may god have mercy on your soul
+	END   = 100000000
 )
 
 var fset *token.FileSet
@@ -43,20 +43,16 @@ func main() {
 }
 
 func initializeInstrumenter() {
+	src_location := "../TestPrograms/serverUDP.go"
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
-	astFile, _ = parser.ParseFile(fset, "../TestPrograms/serverUDP.go", nil, parser.ParseComments)
+	astFile, _ = parser.ParseFile(fset, src_location, nil, parser.ParseComments)
 
 	// Print the AST.
 
-	c = getWrapper(nil, "../TestPrograms/serverUDP.go")
-	//fset = c.fset
-
-	//astFile = c.f
+	c = getWrapper(nil, src_location)
 
 	ast.Print(fset, astFile)
-
-	//collectVars(149, astFile)
 
 	//fmt.Println(pathStr)
 
@@ -74,15 +70,10 @@ func detectSendReceive(f *ast.File) []*ast.Node {
 			case *ast.SelectorExpr:
 				left, ok := y.X.(*ast.Ident)
 				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" || y.Sel.Name == "WriteTo" {
-
 					fmt.Println(left.Name, y.Sel.Name)
-
 					results = append(results, &n)
-
 				}
-
 			}
-
 			return true
 		}
 
