@@ -48,7 +48,7 @@ The naive approach for inferring these invariants will be to dump all
 state varaible values at all program points and feed them to an
 invariant detector like daikon\cite{ernst2007daikon}. But given the
 number of program points and huge number of variables in a relatively
-large program this approach is not scalable. So we propose two main
+large program this approach is not scalable and also we can end up inferring incorrect invariants that are hold by accident. So we propose two main
 optimizations to reduce the number of program point, variable value
 combinations.
 
@@ -66,27 +66,86 @@ program reaches that point in the runtime.
 
 Since there can be multiple points annotated in a program by a
 developer, vector clocks will be used to partially order annotation
-pairs in the two programs. This will also help to invalidate
-annotations inserted at irrelevant locations by the developer.
+pairs in the two programs.% This will also help to invalidate
+% annotations inserted at irrelevant locations by the developer.
 
-\subsection{Dataflow analysis for Go programs}
+\subsection{Data and Control Flow analysis for Go programs}
 
 Even at interesting program points, variable space that need to be
-captured is very large. So only the variables that were affected by
+captured is very large and also we want to filter out irrelevant invariants by only considering variables that affect each other for invariant detection phase. So only the variables that were affected by
 the communication with other nodes need to be identified. To detect
 these variables, some form of dataflow analysis is required. This
 includes the dataflow of the distributed system as a whole and also in
-a single program. For example using a forward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable at line 1. But currently there are no data flow analysis
-frameworks specifically for Go programs.
+a single program. For example using a forward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable at line 1. But currently there are no data or control flow analysis
+frameworks for Go programs.
 
-So we are planning to do a dynamic dataflow analysis which consists of following steps:
-\begin{itemize}
-\item Instrumenting variable declarations and assignments at the run time
-\item Collecting execution traces of each of these statements by runnning test suites
-\item Doing a forward flow analysis using the collected traces
-\end{itemize}
+\subsubsection{Go Program Slicer}
 
-This dynamic analysis approach was chosen because it gives information about the actual execution and therefore is more accurate. And also compared to using a static analysis-based approach, this approach makes it easier to handle Go language-specific constructs like channels which are used share data between goroutines. Only drawback in this approach is, it only examines the paths invoked during execution, unlike static analysis which can be used to reason about all possible execution paths and variable values. To compensate for that we are planning to use a comprehnsive test suite with good test coverage.
+``A program slice consists of the parts of a program that (potentially) affect the values computed at some point of interest"\cite{Tip}. For example figure \ref{Fig:backslice} illustrates an example Go program and its computed backward slice from line 11, the sliced program only contains statements that affect value of variables used at line 11 (i.e. product). To identify variables affected by the communication with other nodes we computed the forward slice from receive message functions and computed backward slice from send message functions. To compute these forward and backward slices we used the approach first proposed by Ottenstein and Ottenstein \cite{PDG}, which used Program Dependence Graph (PDG) and computed slices by checking the reachability of nodes in this graph. PDG captures both control dependency and data dependency of the program, in fact PDG is computed by combining both Data Dependence Graph and Control Dependence Graph (CDG) of a program. Figure \ref{fig:pdg} illustrates our approach to compute PDG. First, we computed the Control Flow Graph (CFG) of the program, then from the reversed CFG we computed the post-dominance tree. The Dominance tree is computed by the algorithm proposed by Lengauer and Tarjan in \cite{Dom}. In the next step we computed the CDG from post-dominance tree. To compute Data Dependence Graph, first we computed the reaching definitions by solving dataflow equations\cite{dragonbook} and then used $(Def,Use)$ pair to compute the data dependency between associated statements and form Data Dependence Graph. We combined Data and Control Dependence Graphs to compute the PDG. Having the PDG of the program we checked the reachability of nodes in PDG starting from start node to compute forward and backward slices.
+
+
+\begin{figure}
+  \includegraphics[width=\columnwidth,scale=0.5]{images/PDG-approach.png}
+  \caption{Our approach to compute program dependence graph}
+  \label{fig:pdg}
+\end{figure}
+
+
+
+\begin{figure}
+\begin{subfigure}[b]{\linewidth}
+\centering
+ \begin{lstlisting}[]
+	recv(n)
+	i := 1
+	sum := 0
+	product := 1
+	for i <= n {
+		sum := sum + i
+		product := product * i
+		i := i + 1
+	}
+	send(sum)
+	send(product)
+\end{lstlisting}
+        \vspace{-2mm}
+                \caption{A Go Program}
+        \end{subfigure}
+
+\begin{subfigure}[b]{\linewidth}
+\centering
+\begin{lstlisting}[]
+	recv(n)
+	i := 1
+
+	product := 1
+	for i <= n {
+		
+		product := product * i
+		i := i + 1
+	}
+	
+	send(product) // backward slice from here
+\end{lstlisting}
+        \vspace{-2mm}
+                \caption{Go program backward sliced at line 10}
+%                \label{Fig:refactored}
+        \end{subfigure}
+                        \caption{Backward slice of a Go program \cite{Tip} }
+                \label{Fig:backslice}
+\end{figure}
+
+
+
+
+%So we are planning to do a dynamic dataflow analysis which consists of following steps:
+%\begin{itemize}
+%\item Instrumenting variable declarations and assignments at the run time
+%\item Collecting execution traces of each of these statements by runnning test suites
+%\item Doing a forward flow analysis using the collected traces
+%\end{itemize}
+
+%This dynamic analysis approach was chosen because it gives information about the actual execution and therefore is more accurate. And also compared to using a static analysis-based approach, this approach makes it easier to handle Go language-specific constructs like channels which are used share data between goroutines. Only drawback in this approach is, it only examines the paths invoked during execution, unlike static analysis which can be used to reason about all possible execution paths and variable values. To compensate for that we are planning to use a comprehnsive test suite with good test coverage.
 
 % This is a challenging problem in itself because Go language has
 % special constructs like channels to share data between goroutines. We
@@ -124,22 +183,19 @@ This dynamic analysis approach was chosen because it gives information about the
 Overall execution flow of the analysis is illustrated in Figure~\ref{fig:go_flow} and works as follows:
 \begin{itemize}
 \item Developer annotates interesting program points in the Go program which will be used as states for mining invariants.
-\item Program is instrumented to 
-\begin{itemize}
-\item dump variable values at the annotated program points at run time
-\item wrap all RPC communication to include vector clocks
-\item log all declarations and assignments for doing the forward flow analysis
-\end{itemize}
- For this we are hoping to use static analysis libraries
-available under Go-lang Parse package and tools\cite{static_golang} which provide
-support for Identifier resolution, Type information, Call graph
-navigation and Channel peers (send $\leftrightarrow$ receive)
-identification.
-\item Then as the first step in the analysis phase, this instrumented program is executed using the test suites and program traces are collected.
-\item Forward flow analysis is done on the collected traces
-\item Using the results of the previous step, variables contributing to distributed state is identified.
-\item From the dumped variable values at annotated program points (after multiple executions), only the values of variables chosen in the previous step are selected.
-\item Selected variable values belonging to 2 distinct annotated program points in the 2 nodes are fed to Daikon for inferring invariants.
+\item Program Dependence Graph is computed and based on the location of send, receive and developer annotated points, set of variables that contribute to distributed state of the system and thus should be dumped at each point is determined
+\item Program is instrumented to dump selected variable values, their type and current vector clock at the annotated program points at run time
+\item Based on the vector clock of each log, logs are paired to each other and combined variable values of two logs is fed to the daikon in its specific format.
+%For this we are hoping to use static analysis libraries
+%available under Go-lang Parse package and tools\cite{static_golang} which provide
+%support for Identifier resolution, Type information, Call graph
+%navigation and Channel peers (send $\leftrightarrow$ receive)
+%identification.
+%\item Then as the first step in the analysis phase, this instrumented program is executed using the test suites and program traces are collected.
+%\item Forward flow analysis is done on the collected traces
+%\item Using the results of the previous step, variables contributing to distributed state is identified.
+%\item From the dumped variable values at annotated program points (after multiple executions), only the values of variables chosen in the previous step are selected.
+%\item Selected variable values belonging to 2 distinct annotated program points in the 2 nodes are fed to Daikon for inferring invariants.
 \end{itemize}
 
 
