@@ -356,7 +356,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 		dumps[i].Value = vars[i]
 		dumps[i].Type = reflect.TypeOf(vars[i]).String()
 	}
-	point := Point{dumps, lineNumber, logger.currentVC}
+	point := Point{dumps, lineNumber, logger.GetCurrentVC()}
 
 	return point
 }
