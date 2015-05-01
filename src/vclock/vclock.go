@@ -208,7 +208,7 @@ func (vc *VClock) Matches(other *VClock) bool {
 		}
 	}
 
-	return numDiff == 1
+	return numDiff == 1 || numDiff == 2 || numDiff == 3
 
 }
 
