@@ -83,9 +83,9 @@ In each of the following sections we explain each step in detail.
 
 \subsection{Detecting interesting program points}
 
-Rather than dumping state at all program points we expect the
-developer to mark interesting program points using annotations. The
-program state will be dumped at only these annotated points. This will
+Rather than recording state at all program points we expect the
+developer to mark interesting program points using annotations. In our implementation developers need to put a comment \texttt{//@dump} after the program point. The
+program state will be collected at only these annotated points. This will
 also help to narrow down the focus to points that are identified by
 the developer as interesting points without wasting resources
 analyzing useless program points. The annotations will be identified
