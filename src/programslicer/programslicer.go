@@ -1,5 +1,5 @@
 // ProgramSlicer
-package main
+package programslicer
 
 import (
 	"./cfg"
@@ -156,84 +156,84 @@ func ComputeBackwardSlice(start ast.Stmt, cfg *cfg.CFG, info *loader.PackageInfo
 	return slice
 }
 
-func main() {
-	src := `
-  package main
-  func foo(c int, nums []int) int {
-    //START
-    a := c      //6
-    var b int   //7
-    b += 1      //8
-    c, a = a, c //9
-    b = a       //10
-    for a, c = range nums { //11
-      b += a    //12
-    } // 13
-    a, c = c, a //14
-    c = b       //15
-    b++         //16
-    return a    //17
-    //END
-  }`
-	src = `
-	package main
+// func main() {
+// 	src := `
+//   package main
+//   func foo(c int, nums []int) int {
+//     //START
+//     a := c      //6
+//     var b int   //7
+//     b += 1      //8
+//     c, a = a, c //9
+//     b = a       //10
+//     for a, c = range nums { //11
+//       b += a    //12
+//     } // 13
+//     a, c = c, a //14
+//     c = b       //15
+//     b++         //16
+//     return a    //17
+//     //END
+//   }`
+// 	src = `
+// 	package main
 		
-func main() {
-	sum := 0
-	i := 1
-	for i < 11 {
-		sum = sum + i
-		i = i + 1
-	}
-	sum++
-	i++
-}
-`
+// func main() {
+// 	sum := 0
+// 	i := 1
+// 	for i < 11 {
+// 		sum = sum + i
+// 		i = i + 1
+// 	}
+// 	sum++
+// 	i++
+// }
+// `
 
-	var config loader.Config
-	f, err := config.ParseFile("testing", src)
-	if err != nil {
-		return // probably don't proceed
-	}
-	config.CreateFromFiles("testing", f)
-	prog, err := config.Load()
-	if err != nil {
-		return
-	}
+// 	var config loader.Config
+// 	f, err := config.ParseFile("testing", src)
+// 	if err != nil {
+// 		return // probably don't proceed
+// 	}
+// 	config.CreateFromFiles("testing", f)
+// 	prog, err := config.Load()
+// 	if err != nil {
+// 		return
+// 	}
 
-	funcOne := f.Decls[0].(*ast.FuncDecl)
-	c := cfg.FromFunc(funcOne)
-	//in, out := dataflow.ReachingDefs(c, prog.Created[0])
+// 	funcOne := f.Decls[0].(*ast.FuncDecl)
+// 	c := cfg.FromFunc(funcOne)
+// 	//in, out := dataflow.ReachingDefs(c, prog.Created[0])
 
-	//ast.Inspect(f, func(n ast.Node) bool {
-	//	switch stmt := n.(type) {
-	//	case ast.Stmt:
-	//		ins, _ := in[stmt], out[stmt]
-	//		fmt.Println(len(ins))
-	//		// do as you please
-	//	}
-	//	return true
-	//})
-	//var buf bytes.Buffer
-	//dataflow.CreateDataDepGraph(c, prog.Created[0])
-	//c.PrintDataDepDot(&buf, prog.Fset, func(s ast.Stmt) string {
-	//	if _, ok := s.(*ast.AssignStmt); ok {
-	//		return "!"
-	//	} else {
-	//		return ""
-	//	}
-	//})
-	//dot := buf.String()
-	//fmt.Println(dot)
+// 	//ast.Inspect(f, func(n ast.Node) bool {
+// 	//	switch stmt := n.(type) {
+// 	//	case ast.Stmt:
+// 	//		ins, _ := in[stmt], out[stmt]
+// 	//		fmt.Println(len(ins))
+// 	//		// do as you please
+// 	//	}
+// 	//	return true
+// 	//})
+// 	//var buf bytes.Buffer
+// 	//dataflow.CreateDataDepGraph(c, prog.Created[0])
+// 	//c.PrintDataDepDot(&buf, prog.Fset, func(s ast.Stmt) string {
+// 	//	if _, ok := s.(*ast.AssignStmt); ok {
+// 	//		return "!"
+// 	//	} else {
+// 	//		return ""
+// 	//	}
+// 	//})
+// 	//dot := buf.String()
+// 	//fmt.Println(dot)
 
-	ast.Print(prog.Fset, funcOne.Body.List)
-	fmt.Println("computing slice ...")
-	slice := GetForwardAffectedVariables(funcOne.Body.List[1], c, prog.Created[0], prog.Fset)
-	fmt.Println("slice")
-	fmt.Println(len(slice))
-	for _, s := range slice {
-		//fmt.Println(prog.Fset.Position(s.Pos()).Line)
-		fmt.Println(s.Name())
-	}
+// 	ast.Print(prog.Fset, funcOne.Body.List)
+// 	fmt.Println("computing slice ...")
+// 	slice := GetForwardAffectedVariables(funcOne.Body.List[1], c, prog.Created[0], prog.Fset)
+// 	fmt.Println("slice")
+// 	fmt.Println(len(slice))
+// 	for _, s := range slice {
+// 		//fmt.Println(prog.Fset.Position(s.Pos()).Line)
+// 		fmt.Println(s.Name())
+// 	}
 
-}
+// }
