@@ -4,7 +4,7 @@ In this section we explain the details of prototype of our approach implemented 
 
 \subsubsection{Program Instrumenter}
 
-We used Golang's \texttt{go/ast} package to parse the input program and construct the abstract syntax tree. Then we traversed this tree and collect informations about locations of \texttt{//@dump} annotations and send and receive functions. Then we added the required functions for logging the variables to the source code of the program and replaced annotations with appropriate function calls to log distributed state variables of the system. 
+We used Golang's \texttt{go/ast} package to parse the input program and construct the abstract syntax tree. Then we traversed this tree and collected informations about locations of \texttt{//@dump} annotations and send and receive functions. Then we added the required functions for logging the variables to the source code of the program and replaced annotations with appropriate function calls to log distributed state variables of the system. 
 
 \subsubsection{Program Slicer}
 
