@@ -25,6 +25,7 @@ the equality between elements in each pair \texttt{(a,first),
 \end{figure}
 
 \begin{figure}
+\begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Sample code for Communication between 2 nodes - Node 0}, label=lst:node0]
     Integer a := 1
     Integer b := 2
@@ -32,9 +33,8 @@ the equality between elements in each pair \texttt{(a,first),
     recv (buf)
     Integer result := parse (buf)
 \end{lstlisting}
-\end{figure}
-
-\begin{figure}
+\end{minipage}\hfill
+\begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Sample code for Communication between 2 nodes - Node 1}, label=lst:node1]
     recv (buf)
     Integer first := getFirstOperand( buf )
@@ -42,15 +42,44 @@ the equality between elements in each pair \texttt{(a,first),
     Integer sum := first + second
     send ( sum )
 \end{lstlisting}
+\end{minipage}\hfill
 \end{figure}
 
-As mentioned earlier, the naive approach for inferring these invariants will be to dump all
-state variable values at all program points and feed them to an
-invariant detector like Daikon\cite{ernst2007daikon}. But given the
-number of program points and huge number of variables in a relatively
-large program this approach is not scalable. Moreover, it can result in inferring incorrect invariants that are hold by accident. So we propose two main
-optimizations to reduce the number of program point, variable value
-combinations.
+%As mentioned earlier, the naive approach for inferring these invariants will be to dump all
+%state variable values at all program points and feed them to an
+%invariant detector like Daikon\cite{ernst2007daikon}. But given the
+%number of program points and huge number of variables in a relatively
+%large program this approach is not scalable. Moreover, it can result in inferring incorrect invariants that are hold by accident. So we propose two main
+%optimizations to reduce the number of program point, variable value
+%combinations.
+
+Overall execution flow of the analysis is illustrated in Figure~\ref{fig:go_flow} and works as follows:
+\begin{itemize}
+\item Developer annotates interesting program points in the Go program which will be used as states for mining invariants.
+\item Program Dependence Graph is computed and based on the location of send, receive and developer annotated points, set of variables that contribute to distributed state of the system and thus should be collected at each point is determined
+\item Program is instrumented to log selected variable values, their type and current vector clock at the annotated program points at run time
+\item Program is executed by test cases or appropriate inputs and logs of variables are collected
+\item Based on the vector clock of each log, logs are paired to each other
+\item Combined variable values of two logs is fed to the daikon in its specific format.
+%For this we are hoping to use static analysis libraries
+%available under Go-lang Parse package and tools\cite{static_golang} which provide
+%support for Identifier resolution, Type information, Call graph
+%navigation and Channel peers (send $\leftrightarrow$ receive)
+%identification.
+%\item Then as the first step in the analysis phase, this instrumented program is executed using the test suites and program traces are collected.
+%\item Forward flow analysis is done on the collected traces
+%\item Using the results of the previous step, variables contributing to distributed state is identified.
+%\item From the dumped variable values at annotated program points (after multiple executions), only the values of variables chosen in the previous step are selected.
+%\item Selected variable values belonging to 2 distinct annotated program points in the 2 nodes are fed to Daikon for inferring invariants.
+\end{itemize}
+In each of the following sections we explain each step in detail.
+\begin{figure}
+  \includegraphics[width=\columnwidth]{go_flow.png}
+  \caption{Flow of the invariant inference of Go programs}
+  \label{fig:go_flow}
+\end{figure}
+
+
 
 \subsection{Detecting interesting program points}
 
@@ -79,7 +108,9 @@ these variables, some form of data and control flow analysis is required. For ex
 ``A program slice consists of the parts of a program that (potentially) affect the values computed at some point of interest"\cite{Tip}. For example figure \ref{Fig:backslice} illustrates an example Go program and its computed backward slice from line 11, the sliced program only contains statements that affect value of variables used at line 11 (i.e. product). To identify variables affected by the communication with other nodes we computed the forward slice from receive message functions and computed backward slice from send message functions and determined the variables assigned in these sliced statements. To compute these forward and backward slices we used the approach first proposed by Ottenstein and Ottenstein \cite{PDG}, which used Program Dependence Graph (PDG) and computed slices by checking the reachability of nodes in this graph. PDG captures both control dependency and data dependency of the program, in fact PDG is computed by combining both Data Dependence Graph and Control Dependence Graph (CDG) of a program. For example figure \ref{fig:expdg} depicts the PDG of example program of figure \ref{Fig:backslice}. Figure \ref{fig:pdg} illustrates our approach to compute PDG. First, we computed the Control Flow Graph (CFG) of the program, then from the reversed CFG we computed the post-dominance tree. The Dominance tree is computed by the algorithm proposed by Lengauer and Tarjan \cite{Dom}. In the next step we computed the CDG from post-dominance tree. To compute Data Dependence Graph, first we computed the reaching definitions by solving dataflow equations\cite{dragonbook} and then used $(Def,Use)$ pair to compute the data dependency between associated statements and form Data Dependence Graph. We combined Data and Control Dependence Graphs to compute the PDG. Having the PDG of the program we checked the reachability of nodes in PDG starting from start node to compute forward and backward slices. For example, In PDG of figure \ref{fig:expdg} thick lines are control dependence edges and thin lines are data dependence edges, starting from \texttt{send(product)} node and going backward shaded nodes are reachable, so the shaded nodes are in backward slice of \texttt{send(product)} statement.
 
 
+
 \begin{figure}
+\begin{minipage}{.45\textwidth}
 \begin{subfigure}[b]{\linewidth}
 \centering
  \begin{lstlisting}[]
@@ -98,7 +129,8 @@ these variables, some form of data and control flow analysis is required. For ex
         \vspace{-2mm}
                 \caption{A Go Program}
         \end{subfigure}
-
+\end{minipage}\hfill
+\begin{minipage}{.45\textwidth}
 \begin{subfigure}[b]{\linewidth}
 \centering
 \begin{lstlisting}[]
@@ -118,9 +150,55 @@ these variables, some form of data and control flow analysis is required. For ex
                 \caption{Go program backward sliced at line 10}
 %                \label{Fig:refactored}
         \end{subfigure}
+        \end{minipage}\hfill
                         \caption{Backward slice of a Go program \cite{Tip} }
                 \label{Fig:backslice}
 \end{figure}
+
+
+
+%\begin{figure}
+%\begin{subfigure}[b]{\linewidth}
+%\centering
+% \begin{lstlisting}[]
+%	recv(n)
+%	i := 1
+%	sum := 0
+%	product := 1
+%	for i <= n {
+%		sum := sum + i
+%		product := product * i
+%		i := i + 1
+%	}
+%	send(sum)
+%	send(product)
+%\end{lstlisting}
+%        \vspace{-2mm}
+%                \caption{A Go Program}
+%        \end{subfigure}
+%
+%\begin{subfigure}[b]{\linewidth}
+%\centering
+%\begin{lstlisting}[]
+%	recv(n)
+%	i := 1
+%
+%	product := 1
+%	for i <= n {
+%		
+%		product := product * i
+%		i := i + 1
+%	}
+%	
+%	send(product) // backward slice from here
+%\end{lstlisting}
+%        \vspace{-2mm}
+%                \caption{Go program backward sliced at line 10}
+%%                \label{Fig:refactored}
+%        \end{subfigure}
+%                        \caption{Backward slice of a Go program \cite{Tip} }
+%                \label{Fig:backslice}
+%\end{figure}
 
 
 \begin{figure}
@@ -132,10 +210,12 @@ these variables, some form of data and control flow analysis is required. For ex
 
 \begin{figure}
   \includegraphics[width=\columnwidth,scale=0.5]{images/pdg.png}
-  \caption{Program Dependence Graph of Example Program in Figure \ref{Fig:backslice}}
+  \caption{Program Dependence Graph of Example Program in Figure \ref{Fig:backslice} \cite{Tip}}
   \label{fig:expdg}
 \end{figure}
 
+
+\subsection{Matching Logs with Vector Clocks}
 
 
 
@@ -182,30 +262,8 @@ these variables, some form of data and control flow analysis is required. For ex
 % true over the observed executions across 2 nodes. Overall execution
 % flow of the analysis is shown in Figure~\ref{fig:go_flow}.
 
-Overall execution flow of the analysis is illustrated in Figure~\ref{fig:go_flow} and works as follows:
-\begin{itemize}
-\item Developer annotates interesting program points in the Go program which will be used as states for mining invariants.
-\item Program Dependence Graph is computed and based on the location of send, receive and developer annotated points, set of variables that contribute to distributed state of the system and thus should be dumped at each point is determined
-\item Program is instrumented to dump selected variable values, their type and current vector clock at the annotated program points at run time
-\item Based on the vector clock of each log, logs are paired to each other and combined variable values of two logs is fed to the daikon in its specific format.
-%For this we are hoping to use static analysis libraries
-%available under Go-lang Parse package and tools\cite{static_golang} which provide
-%support for Identifier resolution, Type information, Call graph
-%navigation and Channel peers (send $\leftrightarrow$ receive)
-%identification.
-%\item Then as the first step in the analysis phase, this instrumented program is executed using the test suites and program traces are collected.
-%\item Forward flow analysis is done on the collected traces
-%\item Using the results of the previous step, variables contributing to distributed state is identified.
-%\item From the dumped variable values at annotated program points (after multiple executions), only the values of variables chosen in the previous step are selected.
-%\item Selected variable values belonging to 2 distinct annotated program points in the 2 nodes are fed to Daikon for inferring invariants.
-\end{itemize}
 
 
-\begin{figure}
-  \includegraphics[width=\columnwidth]{go_flow.pdf}
-  \caption{Flow of the invariant inference of Go programs}
-  \label{fig:go_flow}
-\end{figure}
 
 % \section{Timeline}
 
