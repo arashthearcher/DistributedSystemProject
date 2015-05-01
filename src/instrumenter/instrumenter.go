@@ -26,6 +26,7 @@ const (
 	END   = 100000000
 )
 
+var src_location string = "../TestPrograms/assignment1.go"
 var fset *token.FileSet
 var astFile *ast.File
 var c *CFGWrapper
@@ -61,7 +62,8 @@ func main() {
 }
 
 func initializeInstrumenter() string {
-	src_location := "../TestPrograms/assignment1.go"
+	
+	extra_code = fmt.Sprintf(extra_code, src_location)
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
 	astFile, _ = parser.ParseFile(fset, src_location, nil, parser.ParseComments)
@@ -341,13 +343,12 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 
 	return buffer.String()
 }
-
 var extra_code string = `
 
 var encoder *gob.Encoder
 
 func InstrumenterInit() {
-	fileW, _ := os.Create("log_client.txt")
+	fileW, _ := os.Create("%s.txt")
 	encoder = gob.NewEncoder(fileW)
 }
 
@@ -382,13 +383,14 @@ type NameValuePair struct {
 	Type    string
 }
 
-func (nvp NameValuePair) String() string {
-	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
-}
+// func (nvp NameValuePair) String() string {
+// 	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
+// }
 
-func (p Point) String() string {
-	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
-}`
+// func (p Point) String() string {
+// 	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
+// }
+`
 
 func addImports() {
 	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\"", "\"strconv\""}

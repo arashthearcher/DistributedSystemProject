@@ -6,12 +6,13 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"strings"
 	//"reflect"
 )
 
 func main() {
-	log1 := readLog("TestPrograms/log_client.txt")
-	log2 := readLog("TestPrograms/log_server.txt")
+	log1 := readLog("../TestPrograms/assignment1.go.txt")
+	log2 := readLog("../TestPrograms/serverUDP.go.txt")
 	addNodeName("client.", log1)
 	addNodeName("server.", log2)
 	fmt.Println(log1[0])
@@ -52,6 +53,8 @@ func createMapOfLogsForEachPoint(log []Point) map[string][]Point {
 
 func writeDeclaration(file *os.File, mapOfPoints map[string][]Point) {
 
+	file.WriteString("decl-version 2.0\n")
+	file.WriteString("var-comparability none\n")
 	file.WriteString("\n")
 	for _, v := range mapOfPoints {
 		point := v[0]
@@ -83,12 +86,14 @@ func writeValues(file *os.File, log []Point) {
 			if variable.Type == "int" {
 				file.WriteString(fmt.Sprintf("%d\n", variable.Value))
 			} else {
-				file.WriteString(fmt.Sprintf("%s\n", variable.Value))
-			}
+				file.WriteString(strings.Replace(fmt.Sprintf("%s", variable.Value),"\n"," ",-1)+"\n")
+			} 
+
 
 			file.WriteString(fmt.Sprintf("1\n"))
 
 		}
+		file.WriteString("\n")
 
 	}
 }
