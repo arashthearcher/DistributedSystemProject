@@ -93,6 +93,7 @@ func getAffectedVars() []string {
 
 	for _, node := range sendNodes {
 		recvStmt := (*node).(ast.Stmt)
+
 		vars := programslicer.GetBackwardAffectedVariables(recvStmt, c.cfg, c.prog.Created[0], c.prog.Fset)
 		affectedVars = append(affectedVars, vars...)
 	}
@@ -139,16 +140,20 @@ func initializeInstrumenter() string {
 func detectReceive(f *ast.File) []*ast.Node {
 	var results []*ast.Node
 	ast.Inspect(f, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.CallExpr:
-			switch y := x.Fun.(type) {
-			case *ast.SelectorExpr:
-				left, ok := y.X.(*ast.Ident)
-				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" {
-					//fmt.Println(left.Name, y.Sel.Name)
-					results = append(results, &n)
+		switch z := n.(type) {
+		case *ast.ExprStmt:
+			switch x := z.X.(type) {
+			case *ast.CallExpr:
+				switch y := x.Fun.(type) {
+				case *ast.SelectorExpr:
+					left, ok := y.X.(*ast.Ident)
+					if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" {
+						//fmt.Println(left.Name, y.Sel.Name)
+						results = append(results, &n)
+					}
 				}
 			}
+
 			return true
 		}
 
@@ -160,14 +165,17 @@ func detectReceive(f *ast.File) []*ast.Node {
 func detectSend(f *ast.File) []*ast.Node {
 	var results []*ast.Node
 	ast.Inspect(f, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.CallExpr:
-			switch y := x.Fun.(type) {
-			case *ast.SelectorExpr:
-				left, ok := y.X.(*ast.Ident)
-				if ok && left.Name == "conn" && y.Sel.Name == "WriteTo" {
-					//fmt.Println(left.Name, y.Sel.Name)
-					results = append(results, &n)
+		switch z := n.(type) {
+		case *ast.ExprStmt:
+			switch x := z.X.(type) {
+			case *ast.CallExpr:
+				switch y := x.Fun.(type) {
+				case *ast.SelectorExpr:
+					left, ok := y.X.(*ast.Ident)
+					if ok && left.Name == "conn" && y.Sel.Name == "WriteTo" {
+						//fmt.Println(left.Name, y.Sel.Name)
+						results = append(results, &n)
+					}
 				}
 			}
 			return true
