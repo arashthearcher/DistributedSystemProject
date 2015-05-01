@@ -4,7 +4,7 @@ In this section we explain the details of prototype of our approach implemented 
 
 \subsubsection{Program Instrumenter}
 
-We used Golang's \texttt{go/ast} package to parse the input program and construct the abstract syntax tree. Then we traversed this tree and collect informations about locations of \texttt{//@dump} annotations and send and receive functions. Then we added the required functions for logging the variables to the source code of the program and replaced annotations with appropriate function calls to log distributed state variables of the system. 
+We used Golang's \texttt{go/ast} package to parse the input program and construct the abstract syntax tree. Then we traversed this tree and collected informations about locations of \texttt{//@dump} annotations and send and receive functions. Then we added the required functions for logging the variables to the source code of the program and replaced annotations with appropriate function calls to log distributed state variables of the system. 
 
 \subsubsection{Program Slicer}
 
@@ -12,11 +12,11 @@ Go program slicer is built on top of CFG and reaching definitions computed as pa
 
 \subsubsection{Log Merger}
 
-We used go vector clocks \cite{vclock} to keep track of vector clocks and also our merge functionality is built on top of this implementation. 
+In this phase we use \texttt{encoding/gob} package to decode data items corresponding to each program point written to the log. We used go vector clocks \cite{vclock} to keep track of vector clocks and also our merge functionality is built on top of this implementation. 
 
 
 \section{Evaluation}
-We implemented our approach in a tool in Go programming language. We evaluated our tool by verifying correctness of pseudo-two-phase commit of figure \ref{lst:2pc} and example program of figure \ref{fig:exampleprog}. Our tool was able to infer the expected invariants in both of these programs. Also, different components of our tool such as program slicer, instrumenter and log merger have been tested in isolation to ensure correctness of the prototype. It is worth mentioning, that our prototype currently only handles scalar variables but extending it to handle structs is only an extra engineering effort. The source code for our analysis and the experimental data are available online\cite{distproject} as open source software.
+We implemented our approach in a tool in Go programming language. We evaluated our tool by verifying correctness of pseudo-two-phase commit of figure \ref{lst:2pc} and example program of figure \ref{fig:exampleprog}. Our tool was able to infer the expected invariants in both of these programs. Also, different components of our tool such as program slicer, instrumenter and log merger have been tested in isolation to ensure correctness of the prototype. It is worth mentioning, that our prototype currently only handles scalar variables but extending it to handle structs is only an extra engineering effort. The source code for our analysis and the experimental data will also be available online as open source software.
 
 
  %We also do not perform interprocedural data and control flow analysis, so we always log all global variables and 

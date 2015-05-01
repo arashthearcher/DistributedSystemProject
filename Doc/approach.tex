@@ -93,7 +93,7 @@ the developer as interesting points without wasting resources
 analyzing useless program points. The annotations will be identified
 by the parser at the instrumentation phase and re-written to include
 statements which will write the values of variable to a file when the
-program reaches that point in the runtime. Since there can be multiple points annotated in a program by a
+program reaches that point in the runtime. The annotation detection is shown in Block 1 of the flow diagram in Figure~\ref{fig:go_flow}. Re-writing the source is done at the Block 3 of the flow diagram in Figure~\ref{fig:go_flow}. Since there can be multiple points annotated in a program by a
 developer, vector clocks will be used to partially order annotation
 pairs in the two programs.% This will also help to invalidate
 % annotations inserted at irrelevant locations by the developer.
@@ -103,7 +103,7 @@ pairs in the two programs.% This will also help to invalidate
 Even at interesting program points, variable space that need to be
 captured is very large and also we want to filter out irrelevant invariants by only considering variables that affect each other for invariant detection phase. So only the variables that were affected by
 the communication with other nodes need to be identified (distributed state variables).  To detect
-these variables, some form of data and control flow analysis is required. For example using a backward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable and receive function at line 1. Note that \texttt{sum} variable is part of distributed state of the system, since its value is affected by a receive function and affects a send function, so it is possibly affected and affects variables in other nodes of the system (here it is affected variables \texttt{a} and \texttt{b} and affects \texttt{result} in Node 0). To compute these distributed state variables, we developed a Go program slicer which we explain in the following section.
+these variables, some form of data and control flow analysis is required. For example using a backward flow analysis on Listing~\ref{lst:node1} we can say that \texttt{sum} variable at line 4 and line 5 is affected by the \texttt{buf} variable and receive function at line 1. Note that \texttt{sum} variable is part of distributed state of the system, since its value is affected by a receive function and affects a send function, so it is possibly affected and affects variables in other nodes of the system (here it is affected variables \texttt{a} and \texttt{b} and affects \texttt{result} in Node 0). To compute these distributed state variables, we developed a Go program slicer which we explain in the following section. This dataflow analysis phase is shown in Block 2 of the flow diagram in Figure~\ref{fig:go_flow}.
 
 \subsubsection{Go Program Slicer}
 
@@ -220,7 +220,7 @@ these variables, some form of data and control flow analysis is required. For ex
 
 \subsection{Matching Logs with Vector Clocks and Feeding to Invariant Detector}
 
-Having the set of distributed state variables at each annotated point in the program by control and data flow analysis, we instrument the program so as to log these variables at the specified points. While logging variables, we also log the vector clock at the annotated point, this help us to match immediate logs across two nodes with each other and merge the logs and make a global snapshot of the system to form a consistent cut. We also log the type of each variable, so we can recover these variables from log file. Then, we convert each merged log to the specific format to be used as input for Daikon invariant detector and run the Daikon.
+Having the set of distributed state variables at each annotated point in the program by control and data flow analysis, we instrument the program so as to log these variables at the specified points. While logging variables, we also log the vector clock at the annotated point, this help us to match immediate logs across two nodes with each other and merge the logs and make a global snapshot of the system to form a consistent cut. We also log the type of each variable, so we can recover these variables from log file. Then, we convert each merged log to the specific format to be used as input for Daikon invariant detector and run the Daikon. This log merging is done at the Block 5 of the flow diagram in Figure~\ref{fig:go_flow}.
 
 
 

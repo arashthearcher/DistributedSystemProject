@@ -1,7 +1,7 @@
-\section{Abstract}
+\begin{abstract}
 
 Inferred invariants can show specification of systems, act as documentation and help program comprehension. This is even more useful in a distributed system where the state is defined globally across nodes and errors are propogated across node boundaries. But defining invariants manually is a laborious task and not feasible for a typical software system. So we propose a technique for inferring likely invariants of distributed systems from run time execution. We use data flow and control flow analyses to identify what contributes to the distributed state of the system. Then we use executions of the program to get runtime values and then use Daikon to infer invariants between variables. To achieve this, we have implemented a program slicer for Go programs, an instrumentation framework and a program--trace analyzer in Go. For evaluating our tool, we have successfully inferred invariants in few distributed programs including the two-phase-commit algorithm.
-
+\end{abstract}
 \section{Introduction}
 
 Building a reliable distributed system is a difficult task, since distributed system should continue operating even when components or the network fail, this means that there are many corner cases that developers should consider when building a system. Building such 
