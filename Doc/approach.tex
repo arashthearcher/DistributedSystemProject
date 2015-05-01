@@ -27,8 +27,8 @@ the equality between elements in each pair \texttt{(a,first),
 \begin{figure}
 \begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Sample code for Communication between 2 nodes - Node 0}, label=lst:node0]
-    Integer a := 1
-    Integer b := 2
+    a := 1
+    b := 2
     send ( a + '_' + b )
     recv (buf)
     Integer result := parse (buf)
@@ -37,12 +37,14 @@ the equality between elements in each pair \texttt{(a,first),
 \begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Sample code for Communication between 2 nodes - Node 1}, label=lst:node1]
     recv (buf)
-    Integer first := getFirstOperand( buf )
-    Integer second := getSecondOperand( buf )
-    Integer sum := first + second
+    first := getFirstOperand( buf )
+    second := getSecondOperand( buf )
+    sum := first + second
     send ( sum )
 \end{lstlisting}
 \end{minipage}\hfill
+\caption{An example program}
+\label{fig:exampleprog}
 \end{figure}
 
 %As mentioned earlier, the naive approach for inferring these invariants will be to dump all
@@ -74,7 +76,7 @@ Overall execution flow of the analysis is illustrated in Figure~\ref{fig:go_flow
 \end{itemize}
 In each of the following sections we explain each step in detail.
 \begin{figure}
-  \includegraphics[width=\columnwidth]{go_flow.png}
+  \includegraphics[width=\columnwidth]{go_flow.pdf}
   \caption{Flow of the invariant inference of Go programs}
   \label{fig:go_flow}
 \end{figure}
@@ -202,7 +204,8 @@ these variables, some form of data and control flow analysis is required. For ex
 
 
 \begin{figure}
-  \includegraphics[width=\columnwidth,scale=0.5]{images/PDG-approach.png}
+\centering
+  \includegraphics[scale=0.3]{images/PDG-approach.png}
   \caption{Our approach to compute program dependence graph}
   \label{fig:pdg}
 \end{figure}
@@ -215,8 +218,9 @@ these variables, some form of data and control flow analysis is required. For ex
 \end{figure}
 
 
-\subsection{Matching Logs with Vector Clocks}
+\subsection{Matching Logs with Vector Clocks and Feeding to Invariant Detector}
 
+Having the set of distributed state variables at each annotated point in the program by control and data flow analysis, we instrument the program so as to log these variables at the specified points. While logging variables, we also log the vector clock at the annotated point, this help us to match immediate logs across two nodes with each other and merge the logs and make a global snapshot of the system to form a consistent cut. We also log the type of each variable, so we can recover these variables from log file. Then, we convert each merged log to the specific format to be used as input for Daikon invariant detector and run the Daikon.
 
 
 

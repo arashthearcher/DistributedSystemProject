@@ -1,4 +1,6 @@
-\section{Implementation}
+\section{Implementation Details}
+
+In this section we explain the details of prototype of our approach implemented in Go programming language.
 
 \subsection{Program Slicer}
 
@@ -6,8 +8,8 @@ Go program slicer is built on top of CFG and reaching definitions computed as pa
 
 
 
-\section{Results}
-We will implement our approach in a tool in Go programming language. We plan to evaluate our tool by verifying correctness of two-phase commit and leader election protocols. Our tool should be able to infer safety property of both algorithms. In two-phase commit protocol all nodes should perform the same action (commit or abort) so our tool should infer this property. In leader election algorithm there should be only one leader (uniqueness property) and at the end of protocol execution all nodes should know ID of the leader (agreement property). It is worth mentioning that our approach is not suitable for checking the liveness properties of these algorithms.
+\section{Evaluation}
+We implemented our approach in a tool in Go programming language. We evaluated our tool by verifying correctness of pseudo-two-phase commit of figure \ref{lst:2pc} and example program of figure \ref{fig:exampleprog}. Our tool was able to infer the expected invariants in both of these programs. Also, different components of our tool such as program slicer, instrumenter and log merger have been tested in isolation to ensure correctness of the prototype. It is worth mentioning, that our prototype currently only handles scalar variables but extending it to handle structs is only an extra engineering effort. %We also do not perform interprocedural data and control flow analysis, so we always log all global variables and 
 
 \section{Related Work}
 
@@ -38,4 +40,4 @@ Beschastnikh et al. \cite{temporalInv} infer temporal invariants from partially 
 
 
 \section{Acknowledgment}
-We would like to thank Ivan Beschastnikh for his valuable insight and feedback on initial draft of this proposal.
+We would like to thank Ivan Beschastnikh for his valuable insight and feedback on proposal of this project.
