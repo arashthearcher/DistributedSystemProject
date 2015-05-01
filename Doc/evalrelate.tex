@@ -16,7 +16,10 @@ We used go vector clocks \cite{vclock} to keep track of vector clocks and also o
 
 
 \section{Evaluation}
-We implemented our approach in a tool in Go programming language. We evaluated our tool by verifying correctness of pseudo-two-phase commit of figure \ref{lst:2pc} and example program of figure \ref{fig:exampleprog}. Our tool was able to infer the expected invariants in both of these programs. Also, different components of our tool such as program slicer, instrumenter and log merger have been tested in isolation to ensure correctness of the prototype. It is worth mentioning, that our prototype currently only handles scalar variables but extending it to handle structs is only an extra engineering effort. %We also do not perform interprocedural data and control flow analysis, so we always log all global variables and 
+We implemented our approach in a tool in Go programming language. We evaluated our tool by verifying correctness of pseudo-two-phase commit of figure \ref{lst:2pc} and example program of figure \ref{fig:exampleprog}. Our tool was able to infer the expected invariants in both of these programs. Also, different components of our tool such as program slicer, instrumenter and log merger have been tested in isolation to ensure correctness of the prototype. It is worth mentioning, that our prototype currently only handles scalar variables but extending it to handle structs is only an extra engineering effort. The source code for our analysis and the experimental data are available online\cite{distproject} as open source software.
+
+
+ %We also do not perform interprocedural data and control flow analysis, so we always log all global variables and 
 
 \section{Related Work}
 
