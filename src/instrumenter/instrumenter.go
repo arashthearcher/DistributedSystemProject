@@ -10,6 +10,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	//"os"
 	//"reflect"
+	"../programslicer"
 	"regexp"
 	"strings"
 	"testing"
@@ -17,8 +18,8 @@ import (
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types"
 
-	"github.com/godoctor/godoctor/analysis/cfg"
-	"github.com/godoctor/godoctor/analysis/dataflow"
+	"../programslicer/cfg"
+	"../programslicer/dataflow"
 )
 
 const (
@@ -26,23 +27,41 @@ const (
 	END   = 100000000
 )
 
-var src_location string = "../TestPrograms/assignment1.go"
+var src_location string = "../TestPrograms/serverUDP.go"
 var fset *token.FileSet
 var astFile *ast.File
 var c *CFGWrapper
 
 func main() {
+
+	optimize := false
+
 	source := initializeInstrumenter()
 	dumpNodes := GetDumpNodes()
 
 	var generated_code []string
-	for _, dump := range dumpNodes {
-		//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
-		//fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
-		line := c.fset.Position(dump.Pos()).Line
-		//fmt.Println(line)
-		generated_code = append(generated_code, GenerateDumpCode(GetAccessedVarsInScope(dump, astFile, c.f), line))
 
+	if !optimize {
+		for _, dump := range dumpNodes {
+			//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
+			//fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
+			line := c.fset.Position(dump.Pos()).Line
+			//fmt.Println(line)
+			// log all vars
+			generated_code = append(generated_code, GenerateDumpCode(GetAccessedVarsInScope(dump, astFile, c.f), line))
+
+		}
+
+	} else {
+		for _, dump := range dumpNodes {
+			//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
+			//fmt.Println(GetAccessedVarsInScope(dump, astFile, c.f))
+			line := c.fset.Position(dump.Pos()).Line
+			//fmt.Println(line)
+			// log all vars
+			generated_code = append(generated_code, GenerateDumpCode(getAffectedVars(), line))
+
+		}
 	}
 	count := 0
 	rp := regexp.MustCompile("\\/\\/@dump")
@@ -61,8 +80,30 @@ func main() {
 
 }
 
+func getAffectedVars() []string {
+	recvNodes := detectReceive(astFile)
+	sendNodes := detectSend(astFile)
+	var affectedVars []*types.Var
+
+	for _, node := range recvNodes {
+		recvStmt := (*node).(ast.Stmt)
+		vars := programslicer.GetForwardAffectedVariables(recvStmt, c.cfg, c.prog.Created[0], c.prog.Fset)
+		affectedVars = append(affectedVars, vars...)
+	}
+
+	for _, node := range sendNodes {
+		recvStmt := (*node).(ast.Stmt)
+		vars := programslicer.GetBackwardAffectedVariables(recvStmt, c.cfg, c.prog.Created[0], c.prog.Fset)
+		affectedVars = append(affectedVars, vars...)
+	}
+	var affectedVarName []string
+	for _, variable := range affectedVars {
+		affectedVarName = append(affectedVarName, variable.Name())
+	}
+	return affectedVarName
+}
+
 func initializeInstrumenter() string {
-	
 	extra_code = fmt.Sprintf(extra_code, src_location)
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
@@ -95,7 +136,7 @@ func initializeInstrumenter() string {
 
 }
 
-func detectSendReceive(f *ast.File) []*ast.Node {
+func detectReceive(f *ast.File) []*ast.Node {
 	var results []*ast.Node
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
@@ -103,7 +144,28 @@ func detectSendReceive(f *ast.File) []*ast.Node {
 			switch y := x.Fun.(type) {
 			case *ast.SelectorExpr:
 				left, ok := y.X.(*ast.Ident)
-				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" || y.Sel.Name == "WriteTo" {
+				if ok && left.Name == "conn" && y.Sel.Name == "ReadFrom" {
+					//fmt.Println(left.Name, y.Sel.Name)
+					results = append(results, &n)
+				}
+			}
+			return true
+		}
+
+		return true
+	})
+	return results
+}
+
+func detectSend(f *ast.File) []*ast.Node {
+	var results []*ast.Node
+	ast.Inspect(f, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.CallExpr:
+			switch y := x.Fun.(type) {
+			case *ast.SelectorExpr:
+				left, ok := y.X.(*ast.Ident)
+				if ok && left.Name == "conn" && y.Sel.Name == "WriteTo" {
 					//fmt.Println(left.Name, y.Sel.Name)
 					results = append(results, &n)
 				}
@@ -343,6 +405,7 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 
 	return buffer.String()
 }
+
 var extra_code string = `
 
 var encoder *gob.Encoder
@@ -383,13 +446,13 @@ type NameValuePair struct {
 	Type    string
 }
 
-// func (nvp NameValuePair) String() string {
-// 	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
-// }
+//func (nvp NameValuePair) String() string {
+//	return fmt.Sprintf("(%s,%s,%s)", nvp.VarName, nvp.Value, nvp.Type)
+//}
 
-// func (p Point) String() string {
-// 	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
-// }
+//func (p Point) String() string {
+//	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
+//}
 `
 
 func addImports() {
@@ -492,8 +555,8 @@ func getWrapper(t *testing.T, filename string) *CFGWrapper {
 	v[START] = cfg.Entry
 	stmts[cfg.Entry] = START
 	stmts[cfg.Exit] = END
-	if len(v) != len(cfg.Blocks()) {
-		t.Logf("expected %d vertices, got %d --construction error", len(v), len(cfg.Blocks()))
+	if len(v) != len(cfg.GetBlocks()) {
+		t.Logf("expected %d vertices, got %d --construction error", len(v), len(cfg.GetBlocks()))
 	}
 
 	return &CFGWrapper{
