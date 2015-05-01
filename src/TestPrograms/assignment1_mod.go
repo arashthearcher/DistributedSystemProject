@@ -71,7 +71,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 	}
 	fmt.Println(Logger.GetCurrentVC())
 	point := Point{dumps, string(lineNumber), Logger.GetCurrentVC()}
-	fmt.Println(point.vectorClock)
+	fmt.Println(point.VectorClock)
 
 	return point
 }
@@ -79,7 +79,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 type Point struct {
 	Dump        []NameValuePair
 	LineNumber  string
-	vectorClock []byte
+	VectorClock []byte
 }
 
 type NameValuePair struct {

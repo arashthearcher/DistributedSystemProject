@@ -87,7 +87,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 type Point struct {
 	Dump        []NameValuePair
 	LineNumber  string
-	vectorClock []byte
+	VectorClock []byte
 }
 
 type NameValuePair struct {

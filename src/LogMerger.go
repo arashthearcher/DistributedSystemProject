@@ -11,8 +11,8 @@ import (
 func main() {
 	log1 := readLog("TestPrograms/log_client.txt")
 	log2 := readLog("TestPrograms/log_server.txt")
-	fmt.Println(log1[0].vectorClock)
-	fmt.Println(log2[0].vectorClock)
+	fmt.Println(log1[0].VectorClock)
+	fmt.Println(log2[0].VectorClock)
 	mergedLog := mergeLogs(log1, log2)
 	writeLogToFile(mergedLog)
 
@@ -94,13 +94,13 @@ func mergePoints(p1, p2 Point) Point {
 	var mergedPoint Point
 	mergedPoint.Dump = append(p1.Dump, p2.Dump...)
 	mergedPoint.LineNumber = p1.LineNumber + "-" + p2.LineNumber
-	pVClock1, err := vclock.FromBytes(p1.vectorClock)
+	pVClock1, err := vclock.FromBytes(p1.VectorClock)
 	printErr(err)
-	pVClock2, err2 := vclock.FromBytes(p2.vectorClock)
+	pVClock2, err2 := vclock.FromBytes(p2.VectorClock)
 	printErr(err2)
 	temp := pVClock1.Copy()
 	temp.Merge(pVClock2)
-	mergedPoint.vectorClock = temp.Bytes()
+	mergedPoint.VectorClock = temp.Bytes()
 
 	return mergedPoint
 
@@ -108,12 +108,12 @@ func mergePoints(p1, p2 Point) Point {
 
 func findMatch(point Point, log []Point) []Point {
 	matched := make([]Point, 0)
-	pVClock, err := vclock.FromBytes(point.vectorClock)
+	pVClock, err := vclock.FromBytes(point.VectorClock)
 	fmt.Println(pVClock)
 	printErr(err)
 	for i := 0; i < len(log); i++ {
 
-		otherVClock, err2 := vclock.FromBytes(log[i].vectorClock)
+		otherVClock, err2 := vclock.FromBytes(log[i].VectorClock)
 		printErr(err2)
 		if pVClock.Matches(otherVClock) {
 			matched = append(matched, log[i])
@@ -155,7 +155,7 @@ func printErr(err error) {
 type Point struct {
 	Dump        []NameValuePair
 	LineNumber  string
-	vectorClock []byte
+	VectorClock []byte
 }
 
 type NameValuePair struct {
