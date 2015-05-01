@@ -52,6 +52,7 @@ func createMapOfLogsForEachPoint(log []Point) map[string][]Point {
 
 func writeDeclaration(file *os.File, mapOfPoints map[string][]Point) {
 
+	file.WriteString("\n")
 	for _, v := range mapOfPoints {
 		point := v[0]
 		file.WriteString(fmt.Sprintf("ppt p-%s:::%s\n", point.LineNumber, point.LineNumber))
@@ -65,6 +66,7 @@ func writeDeclaration(file *os.File, mapOfPoints map[string][]Point) {
 			file.WriteString(fmt.Sprintf("comparability -1\n"))
 
 		}
+		file.WriteString("\n")
 
 	}
 }
