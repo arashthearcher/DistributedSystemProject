@@ -58,7 +58,7 @@ func main() {
 }
 
 func initializeInstrumenter() string {
-	src_location := "../TestPrograms/serverUDP.go"
+	src_location := "../TestPrograms/assignment1.go"
 	// Create the AST by parsing src.
 	fset = token.NewFileSet() // positions are relative to fset
 	astFile, _ = parser.ParseFile(fset, src_location, nil, parser.ParseComments)
@@ -346,7 +346,7 @@ func InstrumenterInit() {
 	fileW, _ := os.Create("log.txt")
 	encoder = gob.NewEncoder(fileW)
 }
-var logger *govec.GoLog
+
 func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
 	length := len(varNames)
@@ -356,7 +356,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 		dumps[i].Value = vars[i]
 		dumps[i].Type = reflect.TypeOf(vars[i]).String()
 	}
-	point := Point{dumps, lineNumber, logger.GetCurrentVC()}
+	point := Point{dumps, lineNumber, Logger.GetCurrentVC()}
 
 	return point
 }
@@ -382,7 +382,7 @@ func (p Point) String() string {
 }`
 
 func addImports() {
-	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\"", "\"../govec\""}
+	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\""}
 	im := ImportAdder{packagesToImport}
 	ast.Walk(im, astFile)
 	ast.SortImports(fset, astFile)

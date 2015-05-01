@@ -9,15 +9,18 @@ import (
 )
 
 func main() {
-	log1 := readLog("log1.txt")
-	log2 := readLog("log2.txt")
+	log1 := readLog("TestPrograms/log_client.txt")
+	log2 := readLog("TestPrograms/log_server.txt")
+	fmt.Println(log1[0].vectorClock)
+	fmt.Println(log2[0].vectorClock)
 	mergedLog := mergeLogs(log1, log2)
+	writeLogToFile(mergedLog)
 
 }
 
 func writeLogToFile(log []Point) {
 
-	file, err := os.Create("daikonLog.txt")
+	file, _ := os.Create("daikonLog.txt")
 
 	mapOfPoints := createMapOfLogsForEachPoint(log)
 	writeDeclaration(file, mapOfPoints)
@@ -37,7 +40,7 @@ func createMapOfLogsForEachPoint(log []Point) map[string][]Point {
 
 func writeDeclaration(file *os.File, mapOfPoints map[string][]Point) {
 
-	for k, v := range mapOfPoints {
+	for _, v := range mapOfPoints {
 		point := v[0]
 		file.WriteString(fmt.Sprintf("ppt p-%s:::%s\n", point.LineNumber, point.LineNumber))
 		file.WriteString(fmt.Sprintf("ppt-type point\n"))
@@ -77,6 +80,7 @@ func mergeLogs(log1, log2 []Point) []Point {
 	for i := 0; i < len(log1); i++ {
 
 		matchedPoints := findMatch(log1[i], log2)
+		fmt.Println(matchedPoints)
 		for j := 0; j < len(matchedPoints); j++ {
 			mergedPoints = append(mergedPoints, mergePoints(matchedPoints[j], log1[i]))
 		}
@@ -105,6 +109,7 @@ func mergePoints(p1, p2 Point) Point {
 func findMatch(point Point, log []Point) []Point {
 	matched := make([]Point, 0)
 	pVClock, err := vclock.FromBytes(point.vectorClock)
+	fmt.Println(pVClock)
 	printErr(err)
 	for i := 0; i < len(log); i++ {
 
@@ -133,6 +138,8 @@ func readLog(filePath string) []Point {
 		e = decoder.Decode(&decodedPoint)
 		if e == nil {
 			pointArray = append(pointArray, decodedPoint)
+		} else {
+			fmt.Println(e)
 		}
 	}
 
