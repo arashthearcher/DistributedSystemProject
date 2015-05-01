@@ -6,16 +6,28 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	//"reflect"
 )
 
 func main() {
 	log1 := readLog("TestPrograms/log_client.txt")
 	log2 := readLog("TestPrograms/log_server.txt")
-	fmt.Println(log1[0].VectorClock)
-	fmt.Println(log2[0].VectorClock)
+	addNodeName("client.", log1)
+	addNodeName("server.", log2)
+	fmt.Println(log1[0])
+	fmt.Println(log2[0])
 	mergedLog := mergeLogs(log1, log2)
 	writeLogToFile(mergedLog)
 
+}
+
+func addNodeName(name string, logs []Point) {
+	for i := range logs {
+		for j := range logs[i].Dump {
+			//fmt.Println(dp.VarName)
+			logs[i].Dump[j].VarName = name + logs[i].Dump[j].VarName
+		}
+	}
 }
 
 func writeLogToFile(log []Point) {
@@ -66,7 +78,12 @@ func writeValues(file *os.File, log []Point) {
 		for i := range point.Dump {
 			variable := point.Dump[i]
 			file.WriteString(fmt.Sprintf("%s\n", variable.VarName))
-			file.WriteString(fmt.Sprintf("%s\n", variable.Value))
+			if variable.Type == "int" {
+				file.WriteString(fmt.Sprintf("%d\n", variable.Value))
+			} else {
+				file.WriteString(fmt.Sprintf("%s\n", variable.Value))
+			}
+
 			file.WriteString(fmt.Sprintf("1\n"))
 
 		}

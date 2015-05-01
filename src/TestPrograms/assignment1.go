@@ -7,14 +7,8 @@ import (
 	"os"
 )
 
-var Logger *govec.GoLog
-
 func main() {
 	Logger = govec.Initialize("Client", "testclient.log")
-	// check if the number of arguments passing to this program is correct
-	if len(os.Args) != 1 {
-		fmt.Println("program is supposed to have 0 arguments !\n")
-	}
 
 	rAddr, errR := net.ResolveUDPAddr("udp4", ":8080")
 	printErr(errR)
@@ -33,8 +27,9 @@ func main() {
 	var buf [1024]byte
 	n, errRead := conn.Read(buf[0:])
 	printErr(errRead)
+	incoming_msg := string(Logger.UnpackReceive("Received", buf[:n]))
+	fmt.Println(">>>" + incoming_msg)
 	//@dump
-	fmt.Println(string(Logger.UnpackReceive("Received", buf[:n])))
 
 	os.Exit(0)
 }
@@ -45,3 +40,5 @@ func printErr(err error) {
 		os.Exit(1)
 	}
 }
+
+var Logger *govec.GoLog

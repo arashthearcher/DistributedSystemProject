@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -72,14 +73,14 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 	for i := 0; i < length; i++ {
 		if vars[i] != nil && ((reflect.TypeOf(vars[i]).Kind() == reflect.String) || (reflect.TypeOf(vars[i]).Kind() == reflect.Int)) {
 			var dump NameValuePair
-			dump.VarName = varNames[i]
+			dump.VarName = "server." + varNames[i]
 			dump.Value = vars[i]
 			dump.Type = reflect.TypeOf(vars[i]).String()
 			dumps = append(dumps, dump)
 		}
 	}
 	fmt.Println(Logger.GetCurrentVC())
-	point := Point{dumps, string(lineNumber), Logger.GetCurrentVC()}
+	point := Point{dumps, strconv.Itoa(lineNumber), Logger.GetCurrentVC()}
 
 	return point
 }

@@ -52,7 +52,10 @@ func main() {
 	})
 
 	transformed = transformed + "\n" + extra_code
-	fmt.Println(transformed)
+
+	rp = regexp.MustCompile("[ ]*func[ ]+main\\(\\)[ ]+{")
+	//fmt.Println(transformed)
+	fmt.Println(rp.ReplaceAllString(transformed, "func main() {\n InstrumenterInit()\n"))
 	//fmt.Println(detectSendReceive(astFile))
 
 }
@@ -174,7 +177,7 @@ func GetAccessedVarsInScope(dumpNode *ast.Comment, f *ast.File, g *ast.File) []s
 
 	return results
 
-	//c := getWrapper(nil, "../TestPrograms/serverUDP.go")
+	//c := getWrapper(nil, "../TestPrograms/assignment1.go")
 
 	//for _, decl := range f.Decls {
 	//	//fmt.Println(GetAccessibleVarsInScope(int(dumps.Slash), astFile))
@@ -342,29 +345,35 @@ func GenerateDumpCode(vars []string, lineNumber int) string {
 var extra_code string = `
 
 var encoder *gob.Encoder
+
 func InstrumenterInit() {
-	fileW, _ := os.Create("log.txt")
+	fileW, _ := os.Create("log_client.txt")
 	encoder = gob.NewEncoder(fileW)
 }
 
 func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
 	length := len(varNames)
-	dumps := make([]NameValuePair, length)
+	dumps := make([]NameValuePair, 0)
 	for i := 0; i < length; i++ {
-		dumps[i].VarName = varNames[i]
-		dumps[i].Value = vars[i]
-		dumps[i].Type = reflect.TypeOf(vars[i]).String()
-	}
-	point := Point{dumps, lineNumber, Logger.GetCurrentVC()}
 
+		if vars[i] != nil && ((reflect.TypeOf(vars[i]).Kind() == reflect.String) || (reflect.TypeOf(vars[i]).Kind() == reflect.Int)) {
+			var dump NameValuePair
+			dump.VarName = varNames[i]
+			dump.Value = vars[i]
+			dump.Type = reflect.TypeOf(vars[i]).String()
+			dumps = append(dumps, dump)
+		}
+	}
+
+	point := Point{dumps, strconv.Itoa(lineNumber), Logger.GetCurrentVC()}
 	return point
 }
 
 type Point struct {
 	Dump        []NameValuePair
-	LineNumber  int
-	vectorClock []byte
+	LineNumber  string
+	VectorClock []byte
 }
 
 type NameValuePair struct {
@@ -378,11 +387,11 @@ func (nvp NameValuePair) String() string {
 }
 
 func (p Point) String() string {
-	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
+	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
 }`
 
 func addImports() {
-	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\""}
+	packagesToImport := []string{"\"encoding/gob\"", "\"os\"", "\"reflect\"", "\"strconv\""}
 	im := ImportAdder{packagesToImport}
 	ast.Walk(im, astFile)
 	ast.SortImports(fset, astFile)

@@ -8,48 +8,60 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 )
 
+
 func main() {
-	InstrumenterInit()
-	Logger = govec.Initialize("Client", "testclient.log")
+ InstrumenterInit()
 
-	rAddr, errR := net.ResolveUDPAddr("udp4", ":8080")
-	printErr(errR)
-	lAddr, errL := net.ResolveUDPAddr("udp4", ":18585")
-	printErr(errL)
+	Logger = govec.Initialize("Server", "testlog.log")
+	conn, err := net.ListenPacket("udp", ":8080")
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		os.Exit(1)
+	//	}
+	printErr(err)
 
-	conn, errDial := net.DialUDP("udp", lAddr, rAddr)
-	printErr(errDial)
+	for {
+		if err != nil {
+			printErr(err)
+			continue
+		}
+		handleConn(conn)
+		fmt.Println("some one connected!")
+		vars27 := []interface{}{err,conn}
+varsName27 := []string{"err","conn"}
+point27 := createPoint(vars27, varsName27, 27)
+encoder.Encode(point27)
+	}
+	conn.Close()
 
-	// sending UDP packet to specified address and port
-	msg := "get me the message !"
-	_, errWrite := conn.Write(Logger.PrepareSend("Asking time", []byte(msg)))
-	printErr(errWrite)
+}
 
-	// Reading the response message
-	var buf [1024]byte
-	n, errRead := conn.Read(buf[0:])
-	printErr(errRead)
-	incoming_msg := string(buf[:n])
-	fmt.Println(incoming_msg)
-	vars30 := []interface{}{incoming_msg, conn, buf, errRead, rAddr, errDial, msg, Logger, errWrite, errR, errL, lAddr}
-	varsName30 := []string{"incoming_msg", "conn", "buf", "errRead", "rAddr", "errDial", "msg", "Logger", "errWrite", "errR", "errL", "lAddr"}
-	point30 := createPoint(vars30, varsName30, 30)
-	encoder.Encode(point30)
-	fmt.Println(string(Logger.UnpackReceive("Received", buf[:n])))
+func handleConn(conn net.PacketConn) {
+	var buf [512]byte
 
-	os.Exit(0)
+	_, addr, err := conn.ReadFrom(buf[0:])
+	Logger.UnpackReceive("Received", buf[0:])
+	printErr(err)
+	msg := fmt.Sprintf("Hello There! time now is %s \n", time.Now().String())
+	conn.WriteTo(Logger.PrepareSend("Sending", []byte(msg)), addr)
+	vars41 := []interface{}{addr,conn,buf,Logger,err,msg}
+varsName41 := []string{"addr","conn","buf","Logger","err","msg"}
+point41 := createPoint(vars41, varsName41, 41)
+encoder.Encode(point41)
 }
 
 func printErr(err error) {
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
 	}
 }
 
 var Logger *govec.GoLog
+
+
 
 var encoder *gob.Encoder
 
@@ -66,7 +78,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
 		if vars[i] != nil && ((reflect.TypeOf(vars[i]).Kind() == reflect.String) || (reflect.TypeOf(vars[i]).Kind() == reflect.Int)) {
 			var dump NameValuePair
-			dump.VarName = "client." + varNames[i]
+			dump.VarName = varNames[i]
 			dump.Value = vars[i]
 			dump.Type = reflect.TypeOf(vars[i]).String()
 			dumps = append(dumps, dump)
@@ -94,5 +106,5 @@ func (nvp NameValuePair) String() string {
 }
 
 func (p Point) String() string {
-	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
+	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
 }

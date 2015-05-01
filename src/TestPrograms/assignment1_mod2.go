@@ -11,7 +11,8 @@ import (
 )
 
 func main() {
-	InstrumenterInit()
+ InstrumenterInit()
+
 	Logger = govec.Initialize("Client", "testclient.log")
 
 	rAddr, errR := net.ResolveUDPAddr("udp4", ":8080")
@@ -31,13 +32,12 @@ func main() {
 	var buf [1024]byte
 	n, errRead := conn.Read(buf[0:])
 	printErr(errRead)
-	incoming_msg := string(buf[:n])
-	fmt.Println(incoming_msg)
-	vars30 := []interface{}{incoming_msg, conn, buf, errRead, rAddr, errDial, msg, Logger, errWrite, errR, errL, lAddr}
-	varsName30 := []string{"incoming_msg", "conn", "buf", "errRead", "rAddr", "errDial", "msg", "Logger", "errWrite", "errR", "errL", "lAddr"}
-	point30 := createPoint(vars30, varsName30, 30)
-	encoder.Encode(point30)
-	fmt.Println(string(Logger.UnpackReceive("Received", buf[:n])))
+	incoming_msg := string(Logger.UnpackReceive("Received", buf[:n]))
+	fmt.Println(">>>" + incoming_msg)
+	vars32 := []interface{}{conn,buf,n,errL,errDial,Logger,msg,errWrite,errRead,incoming_msg,errR,lAddr,rAddr}
+varsName32 := []string{"conn","buf","n","errL","errDial","Logger","msg","errWrite","errRead","incoming_msg","errR","lAddr","rAddr"}
+point32 := createPoint(vars32, varsName32, 32)
+encoder.Encode(point32)
 
 	os.Exit(0)
 }
@@ -50,6 +50,8 @@ func printErr(err error) {
 }
 
 var Logger *govec.GoLog
+
+
 
 var encoder *gob.Encoder
 
@@ -66,7 +68,7 @@ func createPoint(vars []interface{}, varNames []string, lineNumber int) Point {
 
 		if vars[i] != nil && ((reflect.TypeOf(vars[i]).Kind() == reflect.String) || (reflect.TypeOf(vars[i]).Kind() == reflect.Int)) {
 			var dump NameValuePair
-			dump.VarName = "client." + varNames[i]
+			dump.VarName = varNames[i]
 			dump.Value = vars[i]
 			dump.Type = reflect.TypeOf(vars[i]).String()
 			dumps = append(dumps, dump)
@@ -94,5 +96,5 @@ func (nvp NameValuePair) String() string {
 }
 
 func (p Point) String() string {
-	return fmt.Sprintf("%d : %s", p.LineNumber, p.Dump)
+	return fmt.Sprintf("%s : %s", p.LineNumber, p.Dump)
 }

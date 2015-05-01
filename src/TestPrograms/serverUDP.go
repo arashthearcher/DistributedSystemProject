@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var Logger *govec.GoLog
-
 //@dump
 func main() {
 	Logger = govec.Initialize("Server", "testlog.log")
@@ -48,3 +46,5 @@ func printErr(err error) {
 		fmt.Println(err)
 	}
 }
+
+var Logger *govec.GoLog
