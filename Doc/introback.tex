@@ -21,6 +21,7 @@ Consider pseudo-two-phase-commit protocol in figure \ref{lst:2pc}. In this proto
 
 \begin{figure}
 \centering
+\begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Coordinator Code}]
 for i := 1 to n do
 	send('Query',i)
@@ -32,6 +33,8 @@ for i:= 1 to n do
 for i := 1 to n
 	send(commit, i)
 \end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.45\textwidth}
 \begin{lstlisting}[caption={Replica Code}]
 recv(buf)
 if(buf == 'Query')
@@ -43,9 +46,39 @@ else
 	recv(buf)
 	commit = buf
 \end{lstlisting}
+\end{minipage}\hfill
 \caption{Pseudo two phase commit code for coordinator and replicas}
 \label{lst:2pc}
 \end{figure}
+
+
+%\begin{figure}
+%\centering
+%\begin{lstlisting}[caption={Coordinator Code}]
+%for i := 1 to n do
+%	send('Query',i)
+%commit := decide()
+%for i:= 1 to n do
+%	recv(buf,i)
+%	if (buf == 'Abort')
+%		commit := 'Abort'
+%for i := 1 to n
+%	send(commit, i)
+%\end{lstlisting}
+%\begin{lstlisting}[caption={Replica Code}]
+%recv(buf)
+%if(buf == 'Query')
+%	vote:= decide()
+%	send(vote)
+%if (vote == 'Abort')
+%	commit = 'Abort'
+%else
+%	recv(buf)
+%	commit = buf
+%\end{lstlisting}
+%\caption{Pseudo two phase commit code for coordinator and replicas}
+%\label{lst:2pc}
+%\end{figure}
 
 In this work we 
 assume that state of each node is comprised of its variables. Not all variables of one node is affected by other nodes, we define the set of variables of one node whose values are affected by other nodes as distributed state variables of that node. We refer to set of distributed 

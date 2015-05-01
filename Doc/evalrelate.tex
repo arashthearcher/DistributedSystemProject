@@ -1,6 +1,6 @@
-\subsection{Implementation}
+\section{Implementation}
 
-\subsubsection{Program Slicer}
+\subsection{Program Slicer}
 
 Go program slicer is built on top of CFG and reaching definitions computed as part of Go Doctor (The Golang Refactoring Engine) project \cite{godoctor}. Also, some code snippets from Go static single-assignment (SSA) package \cite{ssa} is used to compute dominance tree from CFG. After building PDG, reachability of nodes from start node is determined via a breadth-first search on the graph.
 
