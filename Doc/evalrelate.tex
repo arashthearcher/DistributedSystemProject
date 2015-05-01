@@ -12,7 +12,7 @@ Go program slicer is built on top of CFG and reaching definitions computed as pa
 
 \subsubsection{Log Merger}
 
-We used go vector clocks \cite{vclock} to keep track of vector clocks and also our merge functionality is built on top of this implementation. 
+In this phase we use \texttt{encoding/gob} package to decode data items corresponding to each program point written to the log. We used go vector clocks \cite{vclock} to keep track of vector clocks and also our merge functionality is built on top of this implementation. 
 
 
 \section{Evaluation}
